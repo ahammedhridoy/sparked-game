@@ -35,17 +35,17 @@ export default defineConfig({
   server: {
     proxy: {
       "/api": {
-        target: "http://localhost:5000",
+        target: "https://sparked-game.onrender.com",
         changeOrigin: true,
         secure: false,
       },
       "/socket.io": {
-        target: "http://localhost:5000",
+        target: "https://sparked-game.onrender.com",
         ws: true,
         changeOrigin: true,
       },
       "/uploads": {
-        target: "http://localhost:5000",
+        target: "https://sparked-game.onrender.com",
         changeOrigin: true,
         secure: false,
       },
