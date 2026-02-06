@@ -185,14 +185,10 @@ app.get("/api/health", (req, res) => {
 // Initialize Socket
 socketHandler(io);
 
-// Production static files
-if (process.env.NODE_ENV === "production") {
-  app.use(express.static(path.join(__dirname, "../client/dist")));
-
-  app.get(/.*/, (req, res) => {
-    res.sendFile(path.join(__dirname, "../client/dist/index.html"));
-  });
-}
+// Root route
+app.get("/", (req, res) => {
+  res.send("🚀 Sparked Game API + Socket server running");
+});
 
 const PORT = process.env.PORT || 5000;
 
