@@ -14,7 +14,7 @@ const server = http.createServer(app);
 
 // CORS configuration
 const corsOptions = {
-  origin: process.env.CLIENT_URL || "http://localhost:5173",
+  origin: "*",
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   credentials: true,
 };
@@ -32,8 +32,8 @@ connectDB();
 
 // Middleware
 app.use(cors(corsOptions));
-app.use(express.json({ limit: "100mb" }));
-app.use(express.urlencoded({ extended: true, limit: "100mb" }));
+app.use(express.json({ limit: "500mb" }));
+app.use(express.urlencoded({ extended: true, limit: "500mb" }));
 
 // Request logging
 app.use((req, res, next) => {
