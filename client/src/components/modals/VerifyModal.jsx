@@ -30,7 +30,7 @@ const VerifyModal = () => {
 
     // Ensure URL starts with /
     if (!url.startsWith("/") && !url.startsWith("http")) {
-      url = "/" + url;
+      url = `${import.meta.env.VITE_BACKEND_URL}/${url}`;
     }
 
     // Add cache buster if retrying
