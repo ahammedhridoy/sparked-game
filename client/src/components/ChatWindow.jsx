@@ -56,7 +56,7 @@ const ChatWindow = ({ isOpen, onClose }) => {
         return (
           <div className="chat-media-container">
             <video
-              src={msg.url}
+              src={`${import.meta.env.VITE_BACKEND_URL}${msg.url}`}
               controls
               playsInline
               preload="metadata"
@@ -75,7 +75,7 @@ const ChatWindow = ({ isOpen, onClose }) => {
             <div className="chat-audio-content">
               <div className="chat-audio-label">Voice Message</div>
               <audio
-                src={msg.url}
+                src={`${import.meta.env.VITE_BACKEND_URL}${msg.url}`}
                 controls
                 preload="metadata"
                 className="chat-audio"
@@ -88,10 +88,15 @@ const ChatWindow = ({ isOpen, onClose }) => {
         return (
           <div className="chat-media-container">
             <img
-              src={msg.url}
+              src={`${import.meta.env.VITE_BACKEND_URL}${msg.url}`}
               alt="Shared image"
               className="chat-image"
-              onClick={() => window.open(msg.url, "_blank")}
+              onClick={() =>
+                window.open(
+                  `${import.meta.env.VITE_BACKEND_URL}${msg.url}`,
+                  "_blank",
+                )
+              }
             />
             <div className="chat-media-label">
               <span>📷</span> Photo

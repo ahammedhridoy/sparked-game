@@ -364,7 +364,8 @@ router.post("/:gameId/submit-proof", async (req, res) => {
     // Ensure URL starts with /
     let cleanUrl = proofUrl;
     if (proofUrl && !proofUrl.startsWith("/")) {
-      cleanUrl = "/" + proofUrl;
+      const base = import.meta.env.VITE_BACKEND_URL;
+      cleanUrl = `${base}${proofUrl.startsWith("/") ? "" : "/"}${proofUrl}`;
     }
 
     game.verify.proofUrl = cleanUrl;
