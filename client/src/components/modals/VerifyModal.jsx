@@ -23,20 +23,34 @@ const VerifyModal = () => {
   const card = verify?.card;
 
   // Build the media URL
+  // Build the media URL (robust version)
   const getMediaUrl = useCallback(() => {
     if (!proofUrl) return "";
 
-    let url = proofUrl;
-
-    // if not absolute http url → prefix backend
-    if (!url.startsWith("http")) {
-      const base = import.meta.env.VITE_BACKEND_URL;
-      url = base + (url.startsWith("/") ? url : "/" + url);
+    // already absolute → use directly
+    if (proofUrl.startsWith("http")) {
+      return proofUrl;
     }
 
+    // prefer env backend url
+    let base = import.meta.env.VITE_BACKEND_URL;
+
+    // fallback if env missing (production safety)
+    if (!base) {
+      base = "https://sparked-game.onrender.com";
+    }
+
+    // remove trailing slash from base
+    base = base.replace(/\/$/, "");
+
+    let url = base + (proofUrl.startsWith("/") ? proofUrl : "/" + proofUrl);
+
+    // cache-bust retry
     if (retryCount > 0) {
       url += (url.includes("?") ? "&" : "?") + "_t=" + Date.now();
     }
+
+    console.log("🌍 Media URL built:", url);
 
     return url;
   }, [proofUrl, retryCount]);
