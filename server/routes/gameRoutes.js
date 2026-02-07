@@ -364,7 +364,8 @@ router.post("/:gameId/submit-proof", async (req, res) => {
     // Ensure URL starts with /
     let cleanUrl = proofUrl;
     if (proofUrl && !proofUrl.startsWith("/")) {
-      const base = import.meta.env.VITE_BACKEND_URL;
+      const base =
+        process.env.BACKEND_URL || "https://sparked-game.onrender.com";
       cleanUrl = `${base}${proofUrl.startsWith("/") ? "" : "/"}${proofUrl}`;
     }
 
