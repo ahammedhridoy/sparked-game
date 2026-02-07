@@ -28,12 +28,12 @@ const VerifyModal = () => {
 
     let url = proofUrl;
 
-    // Ensure URL starts with /
-    if (!url.startsWith("/") && !url.startsWith("http")) {
-      url = `${import.meta.env.VITE_BACKEND_URL}/${url}`;
+    // if not absolute http url → prefix backend
+    if (!url.startsWith("http")) {
+      const base = import.meta.env.VITE_BACKEND_URL;
+      url = base + (url.startsWith("/") ? url : "/" + url);
     }
 
-    // Add cache buster if retrying
     if (retryCount > 0) {
       url += (url.includes("?") ? "&" : "?") + "_t=" + Date.now();
     }
