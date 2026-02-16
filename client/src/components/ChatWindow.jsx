@@ -51,17 +51,23 @@ const ChatWindow = ({ isOpen, onClose }) => {
   };
 
   const renderMediaContent = (msg) => {
+    // Derive backend origin from VITE_API_URL or sensible fallback
+    const apiBase = (import.meta.env.VITE_API_URL || `${window.location.protocol}//${window.location.hostname}:5001/api`).replace(/\/$/, "");
+    const originBase = apiBase.replace(/\/api$/, "");
+
     switch (msg.type) {
       case "video":
         return (
           <div className="chat-media-container">
             <video
-              src={`${import.meta.env.VITE_BACKEND_URL}${msg.url}`}
               controls
               playsInline
               preload="metadata"
               className="chat-video"
-            />
+              src={`${originBase}${msg.url}`}
+            >
+              Your browser does not support the video tag.
+            </video>
             <div className="chat-media-label">
               <span>🎬</span> Video
             </div>
@@ -75,10 +81,10 @@ const ChatWindow = ({ isOpen, onClose }) => {
             <div className="chat-audio-content">
               <div className="chat-audio-label">Voice Message</div>
               <audio
-                src={`${import.meta.env.VITE_BACKEND_URL}${msg.url}`}
                 controls
                 preload="metadata"
                 className="chat-audio"
+                src={`${originBase}${msg.url}`}
               />
             </div>
           </div>
@@ -88,15 +94,10 @@ const ChatWindow = ({ isOpen, onClose }) => {
         return (
           <div className="chat-media-container">
             <img
-              src={`${import.meta.env.VITE_BACKEND_URL}${msg.url}`}
+              src={`${originBase}${msg.url}`}
               alt="Shared image"
               className="chat-image"
-              onClick={() =>
-                window.open(
-                  `${import.meta.env.VITE_BACKEND_URL}${msg.url}`,
-                  "_blank",
-                )
-              }
+              onClick={() => window.open(`${originBase}${msg.url}`, "_blank")}
             />
             <div className="chat-media-label">
               <span>📷</span> Photo

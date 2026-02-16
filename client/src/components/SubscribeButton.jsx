@@ -1,24 +1,48 @@
-import React from "react";
+import React, { useState } from "react";
 import { loadStripe } from "@stripe/stripe-js";
 import axios from "axios";
 
-const stripePromise = loadStripe(
-  "pk_test_51Pqw5D2NKSixjN19HNOHyh0o3axOw8XNBEXQIcYJt4pBmDw7e5dEmYfvnqrubXh35UoF5jlKwbrra4EHvWK18Ucz004xTLZCNi",
-); // your test publishable key
+export default function SubscribeButton({ userId, plan = "1m", className = "", label = "🔥 Upgrade to VIP" }) {
+  const [loading, setLoading] = useState(false);
 
-export default function SubscribeButton({ userId, plan }) {
   const handleSubscribe = async () => {
+    if (!userId) {
+      alert("Please login first");
+      return;
+    }
+
+    const publishableKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
+    if (!publishableKey) {
+      console.warn("Stripe publishable key missing (VITE_STRIPE_PUBLISHABLE_KEY)");
+    }
+
+    const API_BASE = import.meta.env.VITE_API_URL || `${window.location.protocol}//${window.location.hostname}:5001/api`;
+
     try {
-      const { data } = await axios.post(
-        "http://localhost:5001/api/subscription/create-session",
-        { userId, plan },
-      );
-      const stripe = await stripePromise;
-      await stripe.redirectToCheckout({ sessionId: data.sessionId });
+      setLoading(true);
+      const { data } = await axios.post(`${API_BASE}/subscription/create-session`, {
+        userId,
+        plan,
+      });
+
+      const stripe = await loadStripe(publishableKey);
+      const { error } = await stripe.redirectToCheckout({ sessionId: data.sessionId });
+      if (error) {
+        console.error(error);
+        alert(error.message || "Unable to redirect to checkout");
+      }
     } catch (error) {
       console.error(error);
+      const message = error?.response?.data?.error || error.message || "Subscription failed";
+      alert(message);
+    } finally {
+      setLoading(false);
     }
   };
 
-  return <button onClick={handleSubscribe}>Subscribe</button>;
+  return (
+    <button className={`btn btn-primary ${className}`} onClick={handleSubscribe} disabled={loading}>
+      {loading ? "Redirecting..." : label}
+    </button>
+  );
 }

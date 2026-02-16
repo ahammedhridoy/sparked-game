@@ -6,6 +6,20 @@ const fs = require("fs");
 const { v4: uuidv4 } = require("uuid");
 const Game = require("../models/Game");
 const { createDeck, dealInitialCards } = require("../config/cards");
+// Add ffmpeg deps for video normalization (guarded)
+let ffmpeg;
+let ffmpegPath;
+try {
+  // eslint-disable-next-line global-require
+  ffmpeg = require("fluent-ffmpeg");
+  // eslint-disable-next-line global-require
+  ffmpegPath = require("ffmpeg-static");
+  if (ffmpegPath && ffmpeg && typeof ffmpeg.setFfmpegPath === "function") {
+    ffmpeg.setFfmpegPath(ffmpegPath);
+  }
+} catch (e) {
+  console.warn("⚠️ ffmpeg not available, video transcoding will be skipped.");
+}
 
 // Ensure uploads directory exists
 const uploadsDir = path.join(__dirname, "..", "uploads");
@@ -45,7 +59,7 @@ const upload = multer({
 });
 
 // ===== UPLOAD MEDIA =====
-router.post("/upload/media", upload.single("media"), (req, res) => {
+router.post("/upload/media", upload.single("media"), async (req, res) => {
   try {
     if (!req.file) {
       console.error("❌ No file in request");
@@ -54,12 +68,45 @@ router.post("/upload/media", upload.single("media"), (req, res) => {
         .json({ success: false, error: "No file uploaded" });
     }
 
-    const type = req.file.mimetype.startsWith("video/") ? "video" : "audio";
-    const url = `/uploads/${req.file.filename}`;
+    const isVideo = req.file.mimetype.startsWith("video/");
+    const type = isVideo ? "video" : "audio";
 
-    console.log("✅ File uploaded:", url, "Type:", type);
+    let finalPath = req.file.path; // absolute path
+    let finalUrl = `/uploads/${req.file.filename}`; // relative URL used by client
 
-    res.json({ success: true, url, type });
+    // If it's a video and not mp4, transcode to mp4 for maximum browser compatibility
+    const ext = path.extname(req.file.filename).toLowerCase();
+    if (isVideo && ext !== ".mp4" && ffmpeg) {
+      try {
+        const baseName = path.basename(req.file.filename, ext);
+        const outFile = `${baseName}.mp4`;
+        const outPath = path.join(uploadsDir, outFile);
+
+        console.log("🎬 Transcoding video to MP4:", req.file.filename, "→", outFile);
+        await new Promise((resolve, reject) => {
+          ffmpeg(finalPath)
+            .videoCodec("libx264")
+            .audioCodec("aac")
+            .format("mp4")
+            .outputOptions(["-movflags +faststart"]) // enable progressive playback
+            .on("end", resolve)
+            .on("error", reject)
+            .save(outPath);
+        });
+
+        // Replace original with converted file reference
+        try { fs.unlinkSync(finalPath); } catch (_) {}
+        finalPath = outPath;
+        finalUrl = `/uploads/${outFile}`;
+      } catch (convErr) {
+        console.error("⚠️ Transcode failed, using original file:", convErr);
+        // We'll fall back to the original file as a last resort
+      }
+    }
+
+    console.log("✅ File ready:", finalUrl, "Type:", type);
+
+    res.json({ success: true, url: finalUrl, type });
   } catch (error) {
     console.error("❌ Upload error:", error);
     res.status(500).json({ success: false, error: "Upload failed" });
@@ -364,8 +411,7 @@ router.post("/:gameId/submit-proof", async (req, res) => {
     // Ensure URL starts with /
     let cleanUrl = proofUrl;
     if (proofUrl && !proofUrl.startsWith("/")) {
-      const base =
-        process.env.BACKEND_URL || "https://sparked-game.onrender.com";
+      const base = process.env.BACKEND_URL || "http://localhost:5001";
       cleanUrl = `${base}${proofUrl.startsWith("/") ? "" : "/"}${proofUrl}`;
     }
 

@@ -9,8 +9,9 @@ const CardModal = ({ card, isDiscard, onClose }) => {
   const handlePlay = async () => {
     try {
       setLoading(true);
-      await playCard(card);
-      onClose();
+      const res = await playCard(card);
+      // Give the UI a tick to render status change (e.g., proof/color pick modals)
+      setTimeout(() => onClose(), 50);
     } catch (error) {
       alert(error.message || "Cannot play this card");
       setLoading(false);

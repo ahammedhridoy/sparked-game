@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   BrowserRouter as Router,
   Routes,
@@ -12,6 +12,11 @@ import JoinGameScreen from "./pages/JoinGameScreen";
 import WaitingScreen from "./pages/WaitingScreen";
 import GameScreen from "./pages/GameScreen";
 import RulesScreen from "./pages/RulesScreen";
+import AdminDashboard from "./pages/AdminDashboard";
+import GamesPage from "./pages/GamesPage";
+import PlayersPage from "./pages/PlayersPage";
+import ChatsPage from "./pages/ChatsPage";
+import { CheckoutSuccess, CheckoutCancel } from "./pages/CheckoutResult";
 
 // Loading component
 const LoadingScreen = () => (
@@ -28,7 +33,7 @@ const LoadingScreen = () => (
 );
 
 // Router with game state awareness
-const AppRoutes = () => {
+const AppRoutes = ({ user, onLogin, onLogout, onUserUpdate }) => {
   const { status, gameId } = useGame();
 
   // Show loading while checking for saved game
@@ -38,18 +43,58 @@ const AppRoutes = () => {
 
   return (
     <Routes>
-      {/* Menu - only if no game */}
+      {/* -------- ADMIN ROUTES -------- */}
+      <Route
+        path="/admin"
+        element={
+          user?.role === "admin" ? (
+            <AdminDashboard />)
+           : (
+            <Navigate to="/" replace />
+          )
+        }
+      />
+
+      <Route
+        path="/admin/games"
+        element={
+          user?.role === "admin" ? <GamesPage /> : <Navigate to="/" replace />
+        }
+      />
+
+      <Route
+        path="/admin/players"
+        element={
+          user?.role === "admin" ? (
+            <PlayersPage />
+          ) : (
+            <Navigate to="/" replace />
+          )
+        }
+      />
+
+      <Route
+        path="/admin/chats"
+        element={
+          user?.role === "admin" ? <ChatsPage /> : <Navigate to="/" replace />
+        }
+      />
+
+      {/* Stripe checkout results */}
+      <Route path="/success" element={<CheckoutSuccess onUserUpdate={onUserUpdate} />} />
+      <Route path="/cancel" element={<CheckoutCancel />} />
+
       <Route
         path="/"
         element={
           status === "menu" ? (
-            <MenuScreen />
+            <MenuScreen user={user} onLogin={onLogin} onLogout={onLogout} />
           ) : status === "waiting" ? (
             <Navigate to="/waiting" replace />
           ) : status === "playing" ? (
             <Navigate to="/game" replace />
           ) : (
-            <MenuScreen />
+            <MenuScreen user={user} onLogin={onLogin} onLogout={onLogout} />
           )
         }
       />
@@ -58,7 +103,13 @@ const AppRoutes = () => {
       <Route
         path="/create"
         element={
-          gameId ? <Navigate to="/waiting" replace /> : <CreateGameScreen />
+          !user ? (
+            <Navigate to="/" replace />
+          ) : gameId ? (
+            <Navigate to="/waiting" replace />
+          ) : (
+            <CreateGameScreen />
+          )
         }
       />
 
@@ -66,7 +117,9 @@ const AppRoutes = () => {
       <Route
         path="/join"
         element={
-          status === "playing" ? (
+          !user ? (
+            <Navigate to="/" replace />
+          ) : status === "playing" ? (
             <Navigate to="/game" replace />
           ) : gameId ? (
             <Navigate to="/waiting" replace />
@@ -80,7 +133,9 @@ const AppRoutes = () => {
       <Route
         path="/waiting"
         element={
-          status === "playing" ? (
+          !user ? (
+            <Navigate to="/" replace />
+          ) : status === "playing" ? (
             <Navigate to="/game" replace />
           ) : status === "waiting" && gameId ? (
             <WaitingScreen />
@@ -94,7 +149,9 @@ const AppRoutes = () => {
       <Route
         path="/game"
         element={
-          status === "playing" && gameId ? (
+          !user ? (
+            <Navigate to="/" replace />
+          ) : status === "playing" && gameId ? (
             <GameScreen />
           ) : status === "waiting" ? (
             <Navigate to="/waiting" replace />
@@ -114,10 +171,37 @@ const AppRoutes = () => {
 };
 
 function App() {
+  const [user, setUser] = useState(() => {
+    try {
+      const raw = localStorage.getItem("sparked_user");
+      return raw ? JSON.parse(raw) : null;
+    } catch (e) {
+      return null;
+    }
+  });
+
+  const handleLogin = (nextUser) => {
+    setUser(nextUser);
+    try {
+      localStorage.setItem("sparked_user", JSON.stringify(nextUser));
+    } catch (e) {
+      // ignore
+    }
+  };
+
+  const handleLogout = () => {
+    setUser(null);
+    localStorage.removeItem("sparked_user");
+  };
+
+  const handleUserUpdate = (u) => {
+    setUser(u);
+  };
+
   return (
-    <GameProvider>
+    <GameProvider user={user}>
       <Router>
-        <AppRoutes />
+        <AppRoutes user={user} onLogin={handleLogin} onLogout={handleLogout} onUserUpdate={handleUserUpdate} />
       </Router>
     </GameProvider>
   );

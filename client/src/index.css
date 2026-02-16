@@ -25,9 +25,8 @@ body,
 }
 
 body {
-  font-family:
-    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu,
-    sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen,
+    Ubuntu, sans-serif;
   background: #0a0a0f;
   color: white;
   user-select: none;
@@ -339,9 +338,7 @@ body {
   overflow: hidden;
   position: relative;
   cursor: pointer;
-  transition:
-    transform 0.2s ease,
-    box-shadow 0.2s ease;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
   flex-shrink: 0;
 }
 
@@ -653,9 +650,8 @@ body,
 }
 
 body {
-  font-family:
-    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu,
-    sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen,
+    Ubuntu, sans-serif;
   background: #0a0a0f;
   color: white;
   user-select: none;
@@ -967,9 +963,7 @@ body {
   overflow: hidden;
   position: relative;
   cursor: pointer;
-  transition:
-    transform 0.2s ease,
-    box-shadow 0.2s ease;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
   flex-shrink: 0;
 }
 
@@ -1287,10 +1281,8 @@ body {
   padding: 32px 28px;
   max-width: 340px;
   width: 100%;
-  box-shadow:
-    0 0 0 1px rgba(255, 255, 255, 0.05),
-    0 20px 50px rgba(0, 0, 0, 0.6),
-    0 0 100px rgba(241, 196, 15, 0.1);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.05),
+    0 20px 50px rgba(0, 0, 0, 0.6), 0 0 100px rgba(241, 196, 15, 0.1);
   animation: modalPop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   position: relative;
   overflow: hidden;
@@ -1405,8 +1397,7 @@ body {
   gap: 10px;
   background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
   color: white;
-  box-shadow:
-    0 4px 20px rgba(39, 174, 96, 0.4),
+  box-shadow: 0 4px 20px rgba(39, 174, 96, 0.4),
     inset 0 1px 0 rgba(255, 255, 255, 0.2);
   text-transform: uppercase;
   letter-spacing: 1px;
@@ -2508,4 +2499,158 @@ textarea {
 
 .ios-note strong {
   color: #f1c40f;
+}
+
+/* Enable scrolling within screen container and snap full-height sections */
+.screen-layout {
+  overflow-y: auto;
+  scroll-snap-type: y proximity;
+}
+
+.screen-layout section {
+  scroll-snap-align: start;
+}
+
+/* ===== Pricing Section ===== */
+.pricing-header {
+  text-align: center;
+  font-weight: 800;
+  font-size: 22px;
+  letter-spacing: 0.2px;
+  opacity: 0.92;
+  margin-bottom: 18px;
+}
+
+.pricing-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 22px;
+}
+
+@media (min-width: 640px) {
+  .pricing-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (min-width: 1024px) {
+  .pricing-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 26px;
+  }
+}
+
+.plan-card {
+  max-width: 380px;
+  min-width: 350px;
+  margin: 0 auto;
+  border-radius: 22px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.04) 0%,
+    rgba(255, 255, 255, 0.02) 100%
+  );
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.35);
+  padding: 28px 24px;
+}
+
+.plan-card--featured {
+  background: radial-gradient(
+    120% 100% at 50% 0%,
+    #2e2a6f 0%,
+    #1e1b4e 45%,
+    #16163a 100%
+  );
+  border-color: rgba(121, 99, 255, 0.6);
+  transform: translateY(-6px);
+}
+
+.plan-badge {
+  display: inline-block;
+  font-weight: 800;
+  font-size: 12px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.85);
+  letter-spacing: 0.4px;
+  margin-bottom: 14px;
+}
+
+.plan-badge--featured {
+  background: rgba(255, 215, 0, 0.22);
+  color: #ffe48a;
+  border: 1px solid rgba(255, 231, 130, 0.35);
+}
+
+.plan-title {
+  font-weight: 900;
+  font-size: 20px;
+  margin-bottom: 6px;
+}
+
+.plan-price {
+  font-weight: 900;
+  font-size: 38px;
+  line-height: 1.1;
+  margin-bottom: 10px;
+}
+
+.plan-currency {
+  font-size: 22px;
+  opacity: 0.9;
+  margin-right: 2px;
+}
+
+.plan-period {
+  font-size: 14px;
+  opacity: 0.7;
+  margin-left: 4px;
+  font-weight: 700;
+}
+
+.plan-subprice {
+  font-size: 12px;
+  opacity: 0.8;
+  margin-top: 4px;
+  font-weight: 600;
+}
+
+.plan-features {
+  list-style: none;
+  padding: 0;
+  margin: 14px 0 18px 0;
+  display: grid;
+  gap: 10px;
+  font-size: 13px;
+  opacity: 0.9;
+}
+
+.plan-features .check {
+  color: #f1c40f;
+  margin-right: 6px;
+  font-weight: 900;
+}
+
+.plan-features--featured .check {
+  color: #9cf1ff;
+}
+
+.plan-cta {
+  width: 100%;
+  padding: 14px 20px;
+  border-radius: 14px;
+  border: none;
+  font-weight: 800;
+  letter-spacing: 0.2px;
+  color: white;
+  background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+  box-shadow: 0 8px 28px rgba(52, 152, 219, 0.35);
+  cursor: pointer;
+}
+
+.plan-cta--featured {
+  background: linear-gradient(135deg, #f1c40f 0%, #f39c12 100%);
+  color: #1a1a2e;
+  box-shadow: 0 10px 34px rgba(241, 196, 15, 0.4);
 }

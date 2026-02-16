@@ -67,7 +67,7 @@ export const GameProvider = ({ children, user }) => {
       console.log("✅ Socket connected");
       setIsConnected(true);
       if (state.gameId && state.playerId) {
-        socketService.joinRoom(state.gameId, state.playerId);
+        socketService.joinRoom(state.gameId, state.playerId, user?.role || "free");
       }
     };
 
@@ -141,7 +141,7 @@ export const GameProvider = ({ children, user }) => {
       socket.off("newMessage", handleNewMessage);
       socketInitialized.current = false;
     };
-  }, [state.gameId, state.playerId]);
+  }, [state.gameId, state.playerId, user?.role]);
 
   // ===== RECONNECT FUNCTION =====
   const reconnectToGame = async (gameId, playerId) => {
@@ -180,7 +180,7 @@ export const GameProvider = ({ children, user }) => {
         const socket = socketService.connect();
         const joinRoom = () => {
           console.log("🔌 Joining room after reconnect");
-          socketService.joinRoom(gameId, playerId);
+          socketService.joinRoom(gameId, playerId, user?.role || "free");
         };
 
         if (socket.connected) {
@@ -276,7 +276,7 @@ export const GameProvider = ({ children, user }) => {
     const socket = socketService.connect();
     const joinRoom = () => {
       console.log("🔌 Joining socket room:", res.gameId);
-      socketService.joinRoom(res.gameId, res.playerId);
+      socketService.joinRoom(res.gameId, res.playerId, user?.role || "free");
     };
 
     if (socket.connected) {
@@ -313,7 +313,7 @@ export const GameProvider = ({ children, user }) => {
     const socket = socketService.connect();
     const joinRoom = () => {
       console.log("🔌 Joining socket room:", res.gameId);
-      socketService.joinRoom(res.gameId, res.playerId);
+      socketService.joinRoom(res.gameId, res.playerId, user?.role || "free");
     };
 
     if (socket.connected) {
@@ -344,24 +344,74 @@ export const GameProvider = ({ children, user }) => {
       throw new Error("Card does not match");
     }
 
-    return await gameAPI.playCard(gameId, playerId, card.uid);
+    const res = await gameAPI.playCard(gameId, playerId, card.uid);
+    if (res?.success && res?.game) {
+      const newStatus = res.game.winner
+        ? "finished"
+        : res.game.player2
+        ? "playing"
+        : "waiting";
+      setState((prev) => ({ ...prev, game: res.game, status: newStatus }));
+      setChat(res.game.chat || []);
+    }
+    return res;
   };
 
   // ===== OTHER ACTIONS =====
   const submitProof = async (url, type) => {
-    return await gameAPI.submitProof(state.gameId, state.playerId, url, type);
+    const res = await gameAPI.submitProof(state.gameId, state.playerId, url, type);
+    if (res?.success && res?.game) {
+      const newStatus = res.game.winner
+        ? "finished"
+        : res.game.player2
+        ? "playing"
+        : "waiting";
+      setState((prev) => ({ ...prev, game: res.game, status: newStatus }));
+      setChat(res.game.chat || []);
+    }
+    return res;
   };
 
   const skipProof = async () => {
-    return await gameAPI.skipProof(state.gameId, state.playerId);
+    const res = await gameAPI.skipProof(state.gameId, state.playerId);
+    if (res?.success && res?.game) {
+      const newStatus = res.game.winner
+        ? "finished"
+        : res.game.player2
+        ? "playing"
+        : "waiting";
+      setState((prev) => ({ ...prev, game: res.game, status: newStatus }));
+      setChat(res.game.chat || []);
+    }
+    return res;
   };
 
   const verifyChallenge = async (success) => {
-    return await gameAPI.verifyChallenge(state.gameId, state.playerId, success);
+    const res = await gameAPI.verifyChallenge(state.gameId, state.playerId, success);
+    if (res?.success && res?.game) {
+      const newStatus = res.game.winner
+        ? "finished"
+        : res.game.player2
+        ? "playing"
+        : "waiting";
+      setState((prev) => ({ ...prev, game: res.game, status: newStatus }));
+      setChat(res.game.chat || []);
+    }
+    return res;
   };
 
   const pickColor = async (color) => {
-    return await gameAPI.pickColor(state.gameId, state.playerId, color);
+    const res = await gameAPI.pickColor(state.gameId, state.playerId, color);
+    if (res?.success && res?.game) {
+      const newStatus = res.game.winner
+        ? "finished"
+        : res.game.player2
+        ? "playing"
+        : "waiting";
+      setState((prev) => ({ ...prev, game: res.game, status: newStatus }));
+      setChat(res.game.chat || []);
+    }
+    return res;
   };
 
   const drawCard = async () => {
@@ -371,16 +421,37 @@ export const GameProvider = ({ children, user }) => {
       return null;
 
     const res = await gameAPI.drawCard(gameId, playerId);
-    if (res.success && res.card) {
-      setState((prev) => ({ ...prev, pendingDraw: res.card }));
+    if (res?.success) {
+      if (res.card) {
+        setState((prev) => ({ ...prev, pendingDraw: res.card }));
+      }
+      if (res.game) {
+        const newStatus = res.game.winner
+          ? "finished"
+          : res.game.player2
+          ? "playing"
+          : "waiting";
+        setState((prev) => ({ ...prev, game: res.game, status: newStatus }));
+        setChat(res.game.chat || []);
+      }
     }
     return res;
   };
 
   const addDrawnCardToHand = async (card) => {
     try {
-      await gameAPI.addToHand(state.gameId, state.playerId, card);
+      const res = await gameAPI.addToHand(state.gameId, state.playerId, card);
       setState((prev) => ({ ...prev, pendingDraw: null }));
+      if (res?.success && res?.game) {
+        const newStatus = res.game.winner
+          ? "finished"
+          : res.game.player2
+          ? "playing"
+          : "waiting";
+        setState((prev) => ({ ...prev, game: res.game, status: newStatus }));
+        setChat(res.game.chat || []);
+      }
+      return res;
     } catch (error) {
       console.error("Add to hand error:", error);
       setState((prev) => ({ ...prev, pendingDraw: null }));

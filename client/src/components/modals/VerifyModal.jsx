@@ -27,23 +27,18 @@ const VerifyModal = () => {
   const getMediaUrl = useCallback(() => {
     if (!proofUrl) return "";
 
-    // already absolute → use directly
+    // If server returned absolute URL, use as is
     if (proofUrl.startsWith("http")) {
       return proofUrl;
     }
 
-    // prefer env backend url
-    let base = import.meta.env.VITE_BACKEND_URL;
+    // If server returned relative like /uploads/xxx, prefer building from API origin
+    // Use VITE_API_URL as base and strip trailing /api if present to get backend origin
+    let apiBase = import.meta.env.VITE_API_URL || "http://localhost:5001/api";
+    apiBase = apiBase.replace(/\/$/, "");
+    const originBase = apiBase.endsWith("/api") ? apiBase.slice(0, -4) : apiBase;
 
-    // fallback if env missing (production safety)
-    if (!base) {
-      base = "https://sparked-game.onrender.com";
-    }
-
-    // remove trailing slash from base
-    base = base.replace(/\/$/, "");
-
-    let url = base + (proofUrl.startsWith("/") ? proofUrl : "/" + proofUrl);
+    let url = originBase + (proofUrl.startsWith("/") ? proofUrl : "/" + proofUrl);
 
     // cache-bust retry
     if (retryCount > 0) {

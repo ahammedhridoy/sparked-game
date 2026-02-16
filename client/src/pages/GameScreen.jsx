@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useGame } from "../context/GameContext";
 import { socketService } from "../services/socket"; // import socket
+import SubscribeButton from "../components/SubscribeButton";
 
 import Card, { CardBack } from "../components/Card";
 import ChatWindow from "../components/ChatWindow";
@@ -14,6 +15,7 @@ import ChallengeModal from "../components/modals/ChallengeModal";
 const GameScreen = () => {
   const navigate = useNavigate();
   const {
+    user,
     game,
     gameId,
     playerId,
@@ -28,27 +30,27 @@ const GameScreen = () => {
   const [chatOpen, setChatOpen] = useState(false);
   const [selectedCard, setSelectedCard] = useState(null);
   const [isDiscard, setIsDiscard] = useState(false);
+  const [freeExpired, setFreeExpired] = useState(false);
 
   // ------------------- SOCKET -------------------
   useEffect(() => {
     if (!gameId || !playerId) return;
 
-    // Connect socket & join room
-    socketService.connect();
-    socketService.joinRoom(gameId, playerId, "player");
+    const handleFreeExpired = () => {
+      setFreeExpired(true);
+      setChatOpen(false);
+    };
 
-    // Listen to chat messages (example)
-    socketService.on("chatMessage", (msg) => {
-      console.log("💬 New chat message:", msg);
-      // You can push msg to ChatWindow state here if needed
-    });
+    socketService.on("freeTimeExpired", handleFreeExpired);
 
     return () => {
-      socketService.off("chatMessage");
-      socketService.disconnect();
+      socketService.off("freeTimeExpired", handleFreeExpired);
     };
   }, [gameId, playerId]);
   // ----------------------------------------------
+
+  // Connect socket & join room
+  // (handled by GameContext)
 
   // Refresh on mount to ensure latest state
   useEffect(() => {
@@ -128,7 +130,7 @@ const GameScreen = () => {
     statusClass = "waiting";
   }
 
-  const canInteract = isMyTurn && !game.verify && !game.needsColorPick;
+  const canInteract = isMyTurn && !game.verify && !game.needsColorPick && !freeExpired;
 
   const handleCardClick = (card) => {
     setSelectedCard(card);
@@ -255,19 +257,74 @@ const GameScreen = () => {
         </div>
 
         {/* Chat Button */}
-        {/* Chat Button */}
         <button
           onClick={() => {
-            if (user.role === "free") {
+            if (freeExpired) {
+              alert("Your free play time is over. Upgrade to continue!");
+              return;
+            }
+            if (user?.role === "free") {
               alert("Subscribe to use chat!");
               return;
             }
-            setChatOpen(!chatOpen); // toggle chat for paid users
+            setChatOpen(!chatOpen);
           }}
           className="chat-toggle-btn"
         >
           💬
         </button>
+
+        {/* Free time expired overlay */}
+        {freeExpired && (
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              background: "rgba(0,0,0,0.75)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              zIndex: 50,
+              padding: 20,
+              textAlign: "center",
+            }}
+          >
+            <div
+              style={{
+                background: "#111",
+                border: "1px solid rgba(255,255,255,0.1)",
+                borderRadius: 12,
+                padding: 24,
+                maxWidth: 420,
+                width: "100%",
+              }}
+            >
+              <div style={{ fontSize: 28, marginBottom: 8 }}>⏰ Time's up!</div>
+              <p style={{ opacity: 0.8, marginBottom: 16 }}>
+                Your free 10-minute session has ended. Upgrade to VIP to keep
+                playing without limits.
+              </p>
+              {user ? (
+                <SubscribeButton userId={user.id} plan="1m" />
+              ) : (
+                <button
+                  className="btn btn-primary"
+                  onClick={() => navigate("/", { replace: true })}
+                >
+                  Login to Upgrade
+                </button>
+              )}
+              <div style={{ marginTop: 12 }}>
+                <button
+                  className="btn btn-ghost"
+                  onClick={() => navigate("/", { replace: true })}
+                >
+                  Exit to Menu
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Modals */}

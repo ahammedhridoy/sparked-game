@@ -23,26 +23,56 @@ router.post(
       return res.status(400).send(`Webhook Error: ${err.message}`);
     }
 
-    // Handle subscription events
-    if (
-      event.type === "checkout.session.completed" ||
-      event.type === "invoice.payment_succeeded"
-    ) {
-      const session = event.data.object;
-      const user = await User.findOne({ email: session.customer_email });
-      if (user) {
-        user.role = "vip";
-        user.subscription.status = "active";
-        user.subscription.plan =
-          session.display_items?.[0]?.plan?.interval || "1m";
-        user.subscription.expiresAt = new Date(
-          Date.now() + 30 * 24 * 60 * 60 * 1000,
-        ); // 30 days for now, can customize per plan
-        await user.save();
-      }
-    }
+    try {
+      switch (event.type) {
+        case "checkout.session.completed": {
+          const session = event.data.object;
+          const email = session.customer_email;
+          const plan = session.metadata?.plan || "1m";
 
-    res.json({ received: true });
+          const user = await User.findOne({ email });
+          if (user) {
+            user.role = "vip";
+            user.subscription = user.subscription || {};
+            user.subscription.status = "active";
+            user.subscription.plan = plan;
+            // Set expiry based on plan
+            const months = plan === "12m" ? 12 : plan === "6m" ? 6 : 1;
+            const expires = new Date();
+            expires.setMonth(expires.getMonth() + months);
+            user.subscription.expiresAt = expires;
+            await user.save();
+          }
+          break;
+        }
+        case "customer.subscription.deleted":
+        case "invoice.payment_failed": {
+          const subscription = event.data.object;
+          let email;
+          // Try to get customer email for deletion events (may require lookup)
+          if (subscription?.customer_email) {
+            email = subscription.customer_email;
+          }
+          if (email) {
+            const user = await User.findOne({ email });
+            if (user) {
+              user.role = "free";
+              user.subscription.status = "canceled";
+              await user.save();
+            }
+          }
+          break;
+        }
+        default:
+          // ignore other events
+          break;
+      }
+
+      res.json({ received: true });
+    } catch (e) {
+      console.error("Webhook handling error:", e);
+      res.status(500).send("Webhook handler failed");
+    }
   },
 );
 
