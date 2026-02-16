@@ -19,12 +19,12 @@ export const useGame = () => {
   return context;
 };
 
-export const GameProvider = ({ children }) => {
+export const GameProvider = ({ children, user }) => {
   const [state, setState] = useState({
     gameId: null,
     playerId: null,
     game: null,
-    status: "loading", // Start with loading
+    status: "loading",
     pendingDraw: null,
   });
   const [chat, setChat] = useState([]);
@@ -47,7 +47,6 @@ export const GameProvider = ({ children }) => {
         await reconnectToGame(savedGameId, savedPlayerId);
         isReconnecting.current = false;
       } else {
-        // No saved game, go to menu
         setState((prev) => ({ ...prev, status: "menu" }));
       }
     };
@@ -128,7 +127,6 @@ export const GameProvider = ({ children }) => {
     socket.on("gameDeleted", handleGameDeleted);
     socket.on("newMessage", handleNewMessage);
 
-    // If already connected, join room immediately
     if (socket.connected) {
       handleConnect();
     }
@@ -153,7 +151,6 @@ export const GameProvider = ({ children }) => {
       const res = await gameAPI.getGame(gameId);
 
       if (res.game) {
-        // Check if this player is still in the game
         const isPlayer1 = playerId === "player1";
         const playerData = isPlayer1 ? res.game.player1 : res.game.player2;
 
@@ -180,9 +177,7 @@ export const GameProvider = ({ children }) => {
         });
         setChat(res.game.chat || []);
 
-        // Connect socket and join room
         const socket = socketService.connect();
-
         const joinRoom = () => {
           console.log("🔌 Joining room after reconnect");
           socketService.joinRoom(gameId, playerId);
@@ -260,7 +255,6 @@ export const GameProvider = ({ children }) => {
   // ===== CREATE GAME =====
   const createGame = async (playerName) => {
     console.log("🎮 Creating game for:", playerName);
-
     const res = await gameAPI.createGame(playerName);
 
     if (!res.success) {
@@ -268,12 +262,9 @@ export const GameProvider = ({ children }) => {
     }
 
     console.log("✅ Game created:", res.gameId);
-
-    // Save to localStorage FIRST
     localStorage.setItem("sparked_gameId", res.gameId);
     localStorage.setItem("sparked_playerId", res.playerId);
 
-    // Then update state
     setState({
       gameId: res.gameId,
       playerId: res.playerId,
@@ -282,7 +273,6 @@ export const GameProvider = ({ children }) => {
       pendingDraw: null,
     });
 
-    // Connect socket
     const socket = socketService.connect();
     const joinRoom = () => {
       console.log("🔌 Joining socket room:", res.gameId);
@@ -301,7 +291,6 @@ export const GameProvider = ({ children }) => {
   // ===== JOIN GAME =====
   const joinGame = async (gameId, playerName) => {
     console.log("🎮 Joining game:", gameId, "as:", playerName);
-
     const res = await gameAPI.joinGame(gameId, playerName);
 
     if (!res.success) {
@@ -309,12 +298,9 @@ export const GameProvider = ({ children }) => {
     }
 
     console.log("✅ Joined game:", res.gameId);
-
-    // Save to localStorage FIRST
     localStorage.setItem("sparked_gameId", res.gameId);
     localStorage.setItem("sparked_playerId", res.playerId);
 
-    // Then update state
     setState({
       gameId: res.gameId,
       playerId: res.playerId,
@@ -324,7 +310,6 @@ export const GameProvider = ({ children }) => {
     });
     setChat(res.game.chat || []);
 
-    // Connect socket
     const socket = socketService.connect();
     const joinRoom = () => {
       console.log("🔌 Joining socket room:", res.gameId);
@@ -382,16 +367,13 @@ export const GameProvider = ({ children }) => {
   const drawCard = async () => {
     const { game, gameId, playerId } = state;
 
-    if (!game) return null;
-    if (game.turn !== playerId) return null;
-    if (game.verify || game.needsColorPick) return null;
+    if (!game || game.turn !== playerId || game.verify || game.needsColorPick)
+      return null;
 
     const res = await gameAPI.drawCard(gameId, playerId);
-
     if (res.success && res.card) {
       setState((prev) => ({ ...prev, pendingDraw: res.card }));
     }
-
     return res;
   };
 
@@ -401,9 +383,8 @@ export const GameProvider = ({ children }) => {
       setState((prev) => ({ ...prev, pendingDraw: null }));
     } catch (error) {
       console.error("Add to hand error:", error);
-      // Still clear pendingDraw on error to prevent stuck state
       setState((prev) => ({ ...prev, pendingDraw: null }));
-      throw error; // Re-throw so component can handle it
+      throw error;
     }
   };
 
@@ -424,8 +405,6 @@ export const GameProvider = ({ children }) => {
       isExiting.current = true;
 
       const { gameId, playerId } = state;
-
-      console.log("🚪 Exiting game:", gameId, "delete:", deleteGame);
 
       if (gameId && playerId) {
         socketService.emit("leaveRoom", { gameId, playerId });
@@ -459,6 +438,7 @@ export const GameProvider = ({ children }) => {
 
   // ===== CONTEXT VALUE =====
   const value = {
+    user, // <--- added user here
     gameId: state.gameId,
     playerId: state.playerId,
     game: state.game,

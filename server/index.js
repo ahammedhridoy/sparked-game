@@ -8,6 +8,13 @@ const fs = require("fs");
 const connectDB = require("./config/db");
 const gameRoutes = require("./routes/gameRoutes");
 const socketHandler = require("./socket/socketHandler");
+const authRoutes = require("./routes/authRoutes");
+const subscriptionRoutes = require("./routes/subscriptionRoutes");
+const webhookRoutes = require("./routes/webhook");
+
+app.use("/api/auth", authRoutes);
+app.use("/api/subscription", subscriptionRoutes);
+app.use("/webhook", webhookRoutes);
 
 const app = express();
 const server = http.createServer(app);

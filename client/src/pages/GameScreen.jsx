@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useGame } from "../context/GameContext";
+import { socketService } from "../services/socket"; // import socket
+
 import Card, { CardBack } from "../components/Card";
 import ChatWindow from "../components/ChatWindow";
 import CardModal from "../components/modals/CardModal";
@@ -20,11 +22,33 @@ const GameScreen = () => {
     exitGame,
     pendingDraw,
     refresh,
+    player,
   } = useGame();
 
   const [chatOpen, setChatOpen] = useState(false);
   const [selectedCard, setSelectedCard] = useState(null);
   const [isDiscard, setIsDiscard] = useState(false);
+
+  // ------------------- SOCKET -------------------
+  useEffect(() => {
+    if (!gameId || !playerId) return;
+
+    // Connect socket & join room
+    socketService.connect();
+    socketService.joinRoom(gameId, playerId, "player");
+
+    // Listen to chat messages (example)
+    socketService.on("chatMessage", (msg) => {
+      console.log("💬 New chat message:", msg);
+      // You can push msg to ChatWindow state here if needed
+    });
+
+    return () => {
+      socketService.off("chatMessage");
+      socketService.disconnect();
+    };
+  }, [gameId, playerId]);
+  // ----------------------------------------------
 
   // Refresh on mount to ensure latest state
   useEffect(() => {
@@ -231,8 +255,15 @@ const GameScreen = () => {
         </div>
 
         {/* Chat Button */}
+        {/* Chat Button */}
         <button
-          onClick={() => setChatOpen(!chatOpen)}
+          onClick={() => {
+            if (user.role === "free") {
+              alert("Subscribe to use chat!");
+              return;
+            }
+            setChatOpen(!chatOpen); // toggle chat for paid users
+          }}
           className="chat-toggle-btn"
         >
           💬

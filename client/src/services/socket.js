@@ -1,18 +1,12 @@
 import { io } from "socket.io-client";
 
-const SOCKET_URL =
-  import.meta.env.VITE_SOCKET_URL || "https://sparked-game.onrender.com";
+const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || "http://localhost:5001";
 
 class SocketService {
   socket = null;
 
   connect() {
-    if (this.socket?.connected) {
-      console.log("Socket already connected");
-      return this.socket;
-    }
-
-    console.log("🔌 Connecting to socket:", SOCKET_URL);
+    if (this.socket?.connected) return this.socket;
 
     this.socket = io(SOCKET_URL, {
       transports: ["websocket", "polling"],
@@ -23,16 +17,21 @@ class SocketService {
       forceNew: false,
     });
 
-    this.socket.on("connect", () => {
-      console.log("✅ Socket connected:", this.socket.id);
-    });
+    this.socket.on("connect", () =>
+      console.log("✅ Socket connected", this.socket.id),
+    );
+    this.socket.on("disconnect", (reason) =>
+      console.log("❌ Socket disconnected", reason),
+    );
+    this.socket.on("connect_error", (err) =>
+      console.error("Socket error", err.message),
+    );
 
-    this.socket.on("disconnect", (reason) => {
-      console.log("❌ Socket disconnected:", reason);
-    });
-
-    this.socket.on("connect_error", (error) => {
-      console.error("Socket connection error:", error.message);
+    // Global free time expired alert
+    this.socket.on("freeTimeExpired", () => {
+      alert("⏰ Your free play time is over. Please subscribe to continue!");
+      const chatBtn = document.getElementById("chatBtn");
+      if (chatBtn) chatBtn.disabled = true;
     });
 
     return this.socket;
@@ -40,43 +39,28 @@ class SocketService {
 
   disconnect() {
     if (this.socket) {
-      console.log("🔌 Disconnecting socket");
       this.socket.disconnect();
       this.socket = null;
     }
   }
 
-  joinRoom(gameId, playerId) {
+  joinRoom(gameId, playerId, role) {
     if (this.socket?.connected) {
-      console.log("🚪 Joining room:", gameId, "as", playerId);
-      this.socket.emit("joinRoom", { gameId, playerId });
-    } else {
-      console.warn("Socket not connected, cannot join room");
+      this.socket.emit("joinRoom", { gameId, playerId, role });
     }
   }
 
   emit(event, data) {
-    if (this.socket?.connected) {
-      this.socket.emit(event, data);
-    }
+    this.socket?.emit(event, data);
   }
-
   on(event, callback) {
-    if (this.socket) {
-      this.socket.on(event, callback);
-    }
+    this.socket?.on(event, callback);
   }
-
   off(event, callback) {
-    if (this.socket) {
-      this.socket.off(event, callback);
-    }
+    this.socket?.off(event, callback);
   }
-
   once(event, callback) {
-    if (this.socket) {
-      this.socket.once(event, callback);
-    }
+    this.socket?.once(event, callback);
   }
 
   sendMessage(gameId, playerId, text, type = "text", url = null) {
