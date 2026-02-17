@@ -66,4 +66,58 @@ router.post("/create-session", async (req, res) => {
   }
 });
 
+// Verify a completed session and update the user's role without relying on webhooks
+router.get("/verify-session", async (req, res) => {
+  try {
+    if (!STRIPE_SECRET_KEY) {
+      return res
+        .status(500)
+        .json({ error: "Stripe secret key not configured" });
+    }
+    const sessionId = req.query.session_id || req.query.sessionId;
+    if (!sessionId)
+      return res.status(400).json({ error: "Missing session_id" });
+
+    const session = await stripe.checkout.sessions.retrieve(sessionId);
+    if (!session) return res.status(404).json({ error: "Session not found" });
+
+    if (session.status !== "complete") {
+      return res
+        .status(400)
+        .json({ error: `Session status is ${session.status}` });
+    }
+
+    const email = session.customer_email;
+    const plan = session.metadata?.plan || "1m";
+    if (!email)
+      return res.status(400).json({ error: "No customer email on session" });
+
+    const user = await User.findOne({ email });
+    if (!user) return res.status(404).json({ error: "User not found" });
+
+    user.role = "vip";
+    user.subscription = user.subscription || {};
+    user.subscription.status = "active";
+    user.subscription.plan = plan;
+    const months = plan === "12m" ? 12 : plan === "6m" ? 6 : 1;
+    const expires = new Date();
+    expires.setMonth(expires.getMonth() + months);
+    user.subscription.expiresAt = expires;
+    await user.save();
+
+    res.json({
+      ok: true,
+      user: {
+        id: user._id,
+        email: user.email,
+        role: user.role,
+        subscription: user.subscription,
+      },
+    });
+  } catch (err) {
+    console.error("verify-session error:", err);
+    res.status(500).json({ error: "Verification failed" });
+  }
+});
+
 module.exports = router;

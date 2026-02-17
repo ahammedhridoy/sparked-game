@@ -2,7 +2,9 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
-const API_BASE = import.meta.env.VITE_API_URL || `${window.location.protocol}//${window.location.hostname}:5001/api`;
+const API_BASE =
+  import.meta.env.VITE_API_URL ||
+  `${window.location.protocol}//${window.location.hostname}:5000/api`;
 
 export const CheckoutSuccess = ({ onUserUpdate }) => {
   const [params] = useSearchParams();
@@ -17,8 +19,11 @@ export const CheckoutSuccess = ({ onUserUpdate }) => {
         return;
       }
       try {
-        // Give webhook a moment to process
-        await new Promise((r) => setTimeout(r, 1500));
+        // First, ask backend to verify and update user role
+        await axios.get(`${API_BASE}/subscription/verify-session`, {
+          params: { session_id: sessionId },
+        });
+
         // Try to refresh user from localStorage
         const raw = localStorage.getItem("sparked_user");
         if (raw) {
@@ -38,7 +43,7 @@ export const CheckoutSuccess = ({ onUserUpdate }) => {
       }
     };
     verify();
-  }, [params]);
+  }, [params, onUserUpdate]);
 
   return (
     <div className="screen-layout">
@@ -48,19 +53,30 @@ export const CheckoutSuccess = ({ onUserUpdate }) => {
         {status === "complete" && (
           <>
             <p>Your VIP subscription is active. Enjoy unlimited play!</p>
-            <button className="btn btn-primary" onClick={() => navigate("/")}>Back to Menu</button>
+            <button className="btn btn-primary" onClick={() => navigate("/")}>
+              Back to Menu
+            </button>
           </>
         )}
         {status === "missing" && (
           <>
-            <p>Missing checkout session. If you completed payment, your status may still update shortly.</p>
-            <button className="btn btn-primary" onClick={() => navigate("/")}>Back to Menu</button>
+            <p>
+              Missing checkout session. If you completed payment, your status
+              may still update shortly.
+            </p>
+            <button className="btn btn-primary" onClick={() => navigate("/")}>
+              Back to Menu
+            </button>
           </>
         )}
         {status === "error" && (
           <>
-            <p>We had trouble verifying. Please contact support or try again.</p>
-            <button className="btn btn-primary" onClick={() => navigate("/")}>Back to Menu</button>
+            <p>
+              We had trouble verifying. Please contact support or try again.
+            </p>
+            <button className="btn btn-primary" onClick={() => navigate("/")}>
+              Back to Menu
+            </button>
           </>
         )}
       </div>
@@ -75,7 +91,9 @@ export const CheckoutCancel = () => {
       <div className="menu-container" style={{ textAlign: "center" }}>
         <h1 className="gradient-title">Payment canceled</h1>
         <p>No charges were made. You can try again anytime.</p>
-        <button className="btn btn-primary" onClick={() => navigate("/")}>Back to Menu</button>
+        <button className="btn btn-primary" onClick={() => navigate("/")}>
+          Back to Menu
+        </button>
       </div>
     </div>
   );
