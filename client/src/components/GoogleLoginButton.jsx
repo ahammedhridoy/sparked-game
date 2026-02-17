@@ -1,23 +1,23 @@
 import React from "react";
 import { GoogleLogin } from "@react-oauth/google";
-import axios from "axios";
+import api from "../services/api";
 
 export default function GoogleLoginButton({ onLogin }) {
-  const API_URL = import.meta.env.VITE_API_URL || 
-    `${window.location.origin.replace(/\/$/, "")}/api`;
+  const base = import.meta.env.VITE_API_URL || `${window.location.origin.replace(/\/$/, "")}/api`;
 
   return (
     <GoogleLogin
       onSuccess={async (credentialResponse) => {
         try {
-          const { data } = await axios.post(
-            `${API_URL}/auth/google`,
+          const { data } = await api.post(
+            "/auth/google",
             { token: credentialResponse.credential },
           );
           onLogin?.(data.user);
         } catch (err) {
-          console.error("Google login failed", err);
-          alert("Google login failed. Please try again.");
+          const details = err?.response?.data?.error || err.message || "Unknown error";
+          console.error("Google login failed", details);
+          alert(`Google login failed. ${details}`);
         }
       }}
       onError={() => {

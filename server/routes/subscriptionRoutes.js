@@ -3,7 +3,8 @@ const Stripe = require("stripe");
 const User = require("../models/User");
 
 const router = express.Router();
-const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
+const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY;
+const stripe = Stripe(STRIPE_SECRET_KEY || "");
 
 // Subscription prices (Stripe Price IDs) - prefer env overrides
 const priceMap = {
@@ -16,11 +17,25 @@ const priceMap = {
 router.post("/create-session", async (req, res) => {
   try {
     const { userId, plan } = req.body;
+    if (!STRIPE_SECRET_KEY) {
+      return res
+        .status(500)
+        .json({ error: "Stripe secret key not configured" });
+    }
     const user = await User.findById(userId);
     if (!user) return res.status(404).json({ error: "User not found" });
 
     if (!priceMap[plan]) {
       return res.status(400).json({ error: "Invalid plan" });
+    }
+
+    const clientUrl = (
+      process.env.CLIENT_URL ||
+      req.headers.origin ||
+      ""
+    ).replace(/\/$/, "");
+    if (!clientUrl) {
+      return res.status(500).json({ error: "Client URL not configured" });
     }
 
     // Create Stripe Checkout session
@@ -38,14 +53,16 @@ router.post("/create-session", async (req, res) => {
         userId: String(user._id),
         plan,
       },
-      success_url: `${process.env.CLIENT_URL}/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${process.env.CLIENT_URL}/cancel`,
+      success_url: `${clientUrl}/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${clientUrl}/cancel`,
     });
 
-    res.json({ sessionId: session.id });
+    res.json({ sessionId: session.id, url: session.url });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Stripe session creation failed" });
+    console.error("Stripe create-session error:", error?.message || error);
+    res
+      .status(500)
+      .json({ error: error?.message || "Stripe session creation failed" });
   }
 });
 
