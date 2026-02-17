@@ -2,11 +2,11 @@ const Game = require("../models/Game");
 
 module.exports = (io) => {
   const gameRooms = new Map();
+  const freeTimers = new Map();
 
   io.on("connection", (socket) => {
     console.log("Client connected:", socket.id);
 
-    // Join a game room
     socket.on("joinRoom", async ({ gameId, playerId, role }) => {
       console.log(`Player ${playerId} joining room ${gameId}`);
 
@@ -29,19 +29,38 @@ module.exports = (io) => {
 
       console.log(
         `Room ${gameId} players:`,
-        Array.from(gameRooms.get(gameId) || []),
+        Array.from(gameRooms.get(gameId) || [])
       );
 
-      // Free user timer: only for role "free"
       if (role === "free") {
-        console.log(`⏳ Starting 10 min timer for free player ${playerId}`);
-        setTimeout(
-          () => {
-            console.log(`⏰ Free time expired for player ${playerId}`);
+        const key = `${gameId}:${playerId}`;
+        const now = Date.now();
+        let entry = freeTimers.get(key);
+
+        if (!entry) {
+          entry = { endTime: now + 10 * 60 * 1000, timeout: null };
+          freeTimers.set(key, entry);
+          console.log(`⏳ Started 10m timer for ${key}`);
+        } else {
+          console.log(`⏳ Resuming timer for ${key}`);
+        }
+
+        const remaining = Math.max(0, entry.endTime - now);
+        if (entry.timeout) {
+          clearTimeout(entry.timeout);
+          entry.timeout = null;
+        }
+
+        if (remaining === 0) {
+          console.log(`⏰ Timer already expired for ${key}`);
+          socket.emit("freeTimeExpired");
+        } else {
+          entry.timeout = setTimeout(() => {
+            console.log(`⏰ Free time expired for ${key}`);
             socket.emit("freeTimeExpired");
-          },
-          10 * 60 * 1000,
-        ); // 10 minutes
+            freeTimers.delete(key);
+          }, remaining);
+        }
       }
     });
 

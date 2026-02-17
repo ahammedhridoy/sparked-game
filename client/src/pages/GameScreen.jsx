@@ -14,36 +14,27 @@ import ChallengeModal from "../components/modals/ChallengeModal";
 
 const GameScreen = () => {
   const navigate = useNavigate();
-  const {
-    user,
-    game,
-    gameId,
-    playerId,
-    status,
-    drawCard,
-    exitGame,
-    pendingDraw,
-    refresh,
-    player,
-  } = useGame();
+  const { user, game, gameId, playerId, drawCard, exitGame, refresh } =
+    useGame();
 
   const [chatOpen, setChatOpen] = useState(false);
   const [selectedCard, setSelectedCard] = useState(null);
   const [isDiscard, setIsDiscard] = useState(false);
-  const [freeExpired, setFreeExpired] = useState(false);
+  const [freeExpired, setFreeExpired] = useState(() => {
+    try {
+      return localStorage.getItem("sparked_free_expired") === "1";
+    } catch {
+      return false;
+    }
+  });
 
-  // ------------------- SOCKET -------------------
   useEffect(() => {
     if (!gameId || !playerId) return;
 
     const handleFreeExpired = () => {
       setFreeExpired(true);
       setChatOpen(false);
-      try {
-        localStorage.setItem("sparked_free_expired", "1");
-      } catch {
-        // ignore
-      }
+      localStorage.setItem("sparked_free_expired", "1");
     };
 
     socketService.on("freeTimeExpired", handleFreeExpired);
@@ -52,7 +43,6 @@ const GameScreen = () => {
       socketService.off("freeTimeExpired", handleFreeExpired);
     };
   }, [gameId, playerId]);
-  // ----------------------------------------------
 
   // Connect socket & join room
   // (handled by GameContext)

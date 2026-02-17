@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useGame } from "../../context/GameContext";
 
 const ColorPickerModal = () => {
@@ -6,26 +6,33 @@ const ColorPickerModal = () => {
   const [loading, setLoading] = useState(false);
   const [selectedColor, setSelectedColor] = useState(null);
 
-  // Reset loading state when modal opens/closes
-  // useEffect(() => {
-  //   if (game?.needsColorPick && game?.turn === playerId) {
-  //     // Modal just opened, reset states
-  //     setLoading(false);
-  //     setSelectedColor(null);
-  //   }
-  // }, [game?.needsColorPick, game?.turn, playerId]);
+  useEffect(() => {
+    if (game?.needsColorPick && game?.turn === playerId) {
+      setLoading(false);
+      setSelectedColor(null);
+    }
+  }, [game?.needsColorPick, game?.turn, playerId]);
 
-  // Don't show if not needed
+  useEffect(() => {
+    if (!loading) return;
+    let timer = setTimeout(() => {
+      if (game?.needsColorPick && game?.turn === playerId) {
+        setLoading(false);
+        setSelectedColor(null);
+      }
+    }, 5000);
+    return () => clearTimeout(timer);
+  }, [loading, game?.needsColorPick, game?.turn, playerId]);
+
   if (!game?.needsColorPick || game?.turn !== playerId) return null;
 
   const handlePick = async (color) => {
-    if (loading) return; // Prevent double clicks
+    if (loading) return;
 
     try {
       setSelectedColor(color);
       setLoading(true);
       await pickColor(color);
-      // Modal will auto-close when game.needsColorPick becomes false
     } catch (error) {
       console.error("Color pick error:", error);
       alert("Failed to pick color. Try again.");
@@ -59,7 +66,9 @@ const ColorPickerModal = () => {
                 key={c.name}
                 onClick={() => handlePick(c.name)}
                 disabled={loading}
-                className={`color-pick-btn ${c.name} ${selectedColor === c.name ? "selected" : ""}`}
+                className={`color-pick-btn ${c.name} ${
+                  selectedColor === c.name ? "selected" : ""
+                }`}
               >
                 {loading && selectedColor === c.name ? (
                   <>
