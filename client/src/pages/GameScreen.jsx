@@ -313,7 +313,10 @@ const GameScreen = () => {
               <div style={{ marginTop: 12 }}>
                 <button
                   className="btn btn-ghost"
-                  onClick={() => navigate("/", { replace: true })}
+                  onClick={() => {
+                    exitGame(true);
+                    navigate("/", { replace: true });
+                  }}
                 >
                   Exit to Menu
                 </button>

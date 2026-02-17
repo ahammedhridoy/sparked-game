@@ -27,16 +27,11 @@ class SocketService {
       console.error("Socket error", err.message)
     );
 
-    // Global free time expired alert
+    // Let screens handle UI for free-time expiry; persist a flag only
     this.socket.on("freeTimeExpired", () => {
-      alert("⏰ Your free play time is over. Please subscribe to continue!");
       try {
         localStorage.setItem("sparked_free_expired", "1");
-      } catch {
-        // ignore
-      }
-      const chatBtn = document.getElementById("chatBtn");
-      if (chatBtn) chatBtn.disabled = true;
+      } catch {}
     });
 
     return this.socket;

@@ -36,6 +36,11 @@ router.post(
             user.subscription = user.subscription || {};
             user.subscription.status = "active";
             user.subscription.plan = plan;
+            user.subscription.stripeCustomerId = session.customer || null;
+            user.subscription.stripeSubscriptionId =
+              (typeof session.subscription === "string"
+                ? session.subscription
+                : session.subscription?.id) || null;
             // Set expiry based on plan
             const months = plan === "12m" ? 12 : plan === "6m" ? 6 : 1;
             const expires = new Date();

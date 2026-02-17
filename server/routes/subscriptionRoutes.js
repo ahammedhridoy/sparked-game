@@ -99,6 +99,11 @@ router.get("/verify-session", async (req, res) => {
     user.subscription = user.subscription || {};
     user.subscription.status = "active";
     user.subscription.plan = plan;
+    user.subscription.stripeCustomerId = session.customer || null;
+    user.subscription.stripeSubscriptionId =
+      (typeof session.subscription === "string"
+        ? session.subscription
+        : session.subscription?.id) || null;
     const months = plan === "12m" ? 12 : plan === "6m" ? 6 : 1;
     const expires = new Date();
     expires.setMonth(expires.getMonth() + months);
