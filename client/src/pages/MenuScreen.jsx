@@ -12,6 +12,13 @@ const MenuScreen = ({ user, onLogin, onLogout }) => {
   const [isIOS, setIsIOS] = useState(false);
   const [showIOSModal, setShowIOSModal] = useState(false);
   const [showLoginPrompt, setShowLoginPrompt] = useState(false);
+  const [freeExpired] = useState(() => {
+    try {
+      return localStorage.getItem("sparked_free_expired") === "1";
+    } catch {
+      return false;
+    }
+  });
   const pricingRef = useRef(null);
 
   useEffect(() => {
@@ -127,12 +134,12 @@ const MenuScreen = ({ user, onLogin, onLogout }) => {
           <button
             onClick={() => navigate("/create")}
             className="btn btn-primary"
-            disabled={!user || user.role === "free"}
+            disabled={!user || (user.role === "free" && freeExpired)}
             title={
               !user
                 ? "Login with Google to start"
-                : user.role === "free"
-                ? "Upgrade to VIP to play"
+                : user.role === "free" && freeExpired
+                ? "Free trial over — upgrade to VIP to play"
                 : undefined
             }
           >
@@ -142,12 +149,12 @@ const MenuScreen = ({ user, onLogin, onLogout }) => {
           <button
             onClick={() => navigate("/join")}
             className="btn btn-secondary"
-            disabled={!user || user.role === "free"}
+            disabled={!user || (user.role === "free" && freeExpired)}
             title={
               !user
                 ? "Login with Google to join"
-                : user.role === "free"
-                ? "Upgrade to VIP to play"
+                : user.role === "free" && freeExpired
+                ? "Free trial over — upgrade to VIP to play"
                 : undefined
             }
           >

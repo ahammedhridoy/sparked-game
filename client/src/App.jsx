@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   BrowserRouter as Router,
   Routes,
@@ -6,6 +6,7 @@ import {
   Navigate,
 } from "react-router-dom";
 import { GameProvider, useGame } from "./context/GameContext";
+import api from "./services/api";
 import MenuScreen from "./pages/MenuScreen";
 import CreateGameScreen from "./pages/CreateGameScreen";
 import JoinGameScreen from "./pages/JoinGameScreen";
@@ -184,6 +185,7 @@ function App() {
     setUser(nextUser);
     try {
       localStorage.setItem("sparked_user", JSON.stringify(nextUser));
+      localStorage.removeItem("sparked_free_expired");
     } catch (e) {
       // ignore
     }
@@ -192,11 +194,42 @@ function App() {
   const handleLogout = () => {
     setUser(null);
     localStorage.removeItem("sparked_user");
+    localStorage.removeItem("sparked_free_expired");
   };
 
   const handleUserUpdate = (u) => {
     setUser(u);
   };
+
+  // Auto-logout if user removed from DB; refresh user on load
+  useEffect(() => {
+    let cancelled = false;
+    const validate = async () => {
+      if (!user?.id) return;
+      try {
+        const { data } = await api.get("/auth/me", { params: { id: user.id } });
+        if (cancelled) return;
+        const updated = data?.user;
+        if (updated) {
+          localStorage.setItem("sparked_user", JSON.stringify(updated));
+          // Only update state when identity stays same but fields change
+          if (updated.id === user.id) {
+            setUser((prev) => ({ ...prev, ...updated }));
+          }
+        }
+      } catch (e) {
+        if (e?.response?.status === 404) {
+          setUser(null);
+          localStorage.removeItem("sparked_user");
+          localStorage.removeItem("sparked_free_expired");
+        }
+      }
+    };
+    validate();
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id]);
 
   return (
     <GameProvider user={user}>

@@ -18,18 +18,23 @@ class SocketService {
     });
 
     this.socket.on("connect", () =>
-      console.log("✅ Socket connected", this.socket.id),
+      console.log("✅ Socket connected", this.socket.id)
     );
     this.socket.on("disconnect", (reason) =>
-      console.log("❌ Socket disconnected", reason),
+      console.log("❌ Socket disconnected", reason)
     );
     this.socket.on("connect_error", (err) =>
-      console.error("Socket error", err.message),
+      console.error("Socket error", err.message)
     );
 
     // Global free time expired alert
     this.socket.on("freeTimeExpired", () => {
       alert("⏰ Your free play time is over. Please subscribe to continue!");
+      try {
+        localStorage.setItem("sparked_free_expired", "1");
+      } catch {
+        // ignore
+      }
       const chatBtn = document.getElementById("chatBtn");
       if (chatBtn) chatBtn.disabled = true;
     });

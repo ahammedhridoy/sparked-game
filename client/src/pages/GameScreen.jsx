@@ -39,6 +39,11 @@ const GameScreen = () => {
     const handleFreeExpired = () => {
       setFreeExpired(true);
       setChatOpen(false);
+      try {
+        localStorage.setItem("sparked_free_expired", "1");
+      } catch {
+        // ignore
+      }
     };
 
     socketService.on("freeTimeExpired", handleFreeExpired);
@@ -130,7 +135,8 @@ const GameScreen = () => {
     statusClass = "waiting";
   }
 
-  const canInteract = isMyTurn && !game.verify && !game.needsColorPick && !freeExpired;
+  const canInteract =
+    isMyTurn && !game.verify && !game.needsColorPick && !freeExpired;
 
   const handleCardClick = (card) => {
     setSelectedCard(card);
