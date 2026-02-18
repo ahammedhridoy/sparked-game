@@ -7,6 +7,18 @@ import SubscribeButton from "../components/SubscribeButton";
 const MenuScreen = ({ user, onLogin, onLogout }) => {
   const navigate = useNavigate();
   useGame();
+  const [dbExpired, setDbExpired] = React.useState(false);
+  useEffect(() => {
+    const compute = () => {
+      if (user?.role === "free" && user?.freePlayEndsAt) {
+        const expired = new Date(user.freePlayEndsAt).getTime() <= Date.now();
+        setDbExpired(expired);
+      } else {
+        setDbExpired(false);
+      }
+    };
+    setTimeout(compute, 0);
+  }, [user?.role, user?.freePlayEndsAt]);
   const [installPrompt, setInstallPrompt] = useState(null);
   const [isInstalled, setIsInstalled] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
@@ -27,13 +39,13 @@ const MenuScreen = ({ user, onLogin, onLogout }) => {
       window.matchMedia("(display-mode: standalone)").matches ||
       window.navigator.standalone === true
     ) {
-      setIsInstalled(true);
+      setTimeout(() => setIsInstalled(true), 0);
       return;
     }
 
     // Check if iOS
     const isIOSDevice = /iphone|ipad|ipod/i.test(navigator.userAgent);
-    setIsIOS(isIOSDevice);
+    setTimeout(() => setIsIOS(isIOSDevice), 0);
 
     // Listen for install prompt (Android/Desktop)
     const handler = (e) => {
@@ -132,10 +144,6 @@ const MenuScreen = ({ user, onLogin, onLogout }) => {
 
           {/* Primary actions */}
           {(() => {
-            const dbExpired =
-              user?.role === "free" && user?.freePlayEndsAt
-                ? new Date(user.freePlayEndsAt).getTime() <= Date.now()
-                : false;
             const freeExpired = freeExpiredLocal || dbExpired;
             return (
               <button
@@ -156,10 +164,6 @@ const MenuScreen = ({ user, onLogin, onLogout }) => {
           })()}
 
           {(() => {
-            const dbExpired =
-              user?.role === "free" && user?.freePlayEndsAt
-                ? new Date(user.freePlayEndsAt).getTime() <= Date.now()
-                : false;
             const freeExpired = freeExpiredLocal || dbExpired;
             return (
               <button

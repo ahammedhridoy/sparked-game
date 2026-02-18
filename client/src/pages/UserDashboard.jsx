@@ -12,14 +12,22 @@ const UserDashboard = ({ user: initialUser }) => {
       if (!initialUser?.id) return;
       try {
         setLoading(true);
-        const { data } = await api.get("/auth/me", { params: { id: initialUser.id } });
+        const { data } = await api.get("/auth/me", {
+          params: { id: initialUser.id },
+        });
         const updated = data?.user || null;
         if (updated) {
-          setUser({ id: updated.id, email: updated.email, role: updated.role, subscription: updated.subscription, freePlayEndsAt: updated.freePlayEndsAt });
+          setUser({
+            id: updated.id,
+            email: updated.email,
+            role: updated.role,
+            subscription: updated.subscription,
+            freePlayEndsAt: updated.freePlayEndsAt,
+          });
           localStorage.setItem("sparked_user", JSON.stringify(updated));
         }
-      } catch (e) {
-        // ignore; fallback to initialUser
+      } catch {
+        void 0;
       } finally {
         setLoading(false);
       }
@@ -37,66 +45,108 @@ const UserDashboard = ({ user: initialUser }) => {
   }, [user]);
 
   const expiresText = useMemo(() => {
-    const dt = user?.subscription?.expiresAt ? new Date(user.subscription.expiresAt) : null;
+    const dt = user?.subscription?.expiresAt
+      ? new Date(user.subscription.expiresAt)
+      : null;
     return dt ? dt.toLocaleString() : "—";
   }, [user]);
 
   return (
-    <div className="screen-layout" style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
+    <div
+      className="screen-layout"
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
       <div className="menu-container" style={{ maxWidth: 560, width: "100%" }}>
-        <h1 className="gradient-title" style={{ marginBottom: 8 }}>👤 Your Account</h1>
-        <p className="subtitle" style={{ marginBottom: 24 }}>Manage your Sparked subscription</p>
+        <h1 className="gradient-title" style={{ marginBottom: 8 }}>
+          👤 Your Account
+        </h1>
+        <p className="subtitle" style={{ marginBottom: 24 }}>
+          Manage your Sparked subscription
+        </p>
 
-        <div style={{
-          display: "grid",
-          gridTemplateColumns: "1fr 1fr",
-          gap: 16,
-          marginBottom: 20,
-        }}>
-          <div style={{
-            padding: 20,
-            borderRadius: 16,
-            border: "1px solid rgba(255,255,255,0.1)",
-            background: "rgba(255,255,255,0.04)",
-          }}>
-            <div style={{ opacity: 0.6, fontSize: 12, marginBottom: 6 }}>Email</div>
-            <div style={{ fontWeight: 800 }}>{user?.email || initialUser?.email || "—"}</div>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr",
+            gap: 16,
+            marginBottom: 20,
+          }}
+        >
+          <div
+            style={{
+              padding: 20,
+              borderRadius: 16,
+              border: "1px solid rgba(255,255,255,0.1)",
+              background: "rgba(255,255,255,0.04)",
+            }}
+          >
+            <div style={{ opacity: 0.6, fontSize: 12, marginBottom: 6 }}>
+              Email
+            </div>
+            <div style={{ fontWeight: 800 }}>
+              {user?.email || initialUser?.email || "—"}
+            </div>
           </div>
 
-          <div style={{
-            padding: 20,
-            borderRadius: 16,
-            border: "1px solid rgba(255,255,255,0.1)",
-            background: "rgba(255,255,255,0.04)",
-          }}>
-            <div style={{ opacity: 0.6, fontSize: 12, marginBottom: 6 }}>Plan</div>
+          <div
+            style={{
+              padding: 20,
+              borderRadius: 16,
+              border: "1px solid rgba(255,255,255,0.1)",
+              background: "rgba(255,255,255,0.04)",
+            }}
+          >
+            <div style={{ opacity: 0.6, fontSize: 12, marginBottom: 6 }}>
+              Plan
+            </div>
             <div style={{ fontWeight: 800 }}>{planLabel}</div>
           </div>
 
-          <div style={{
-            padding: 20,
-            borderRadius: 16,
-            border: "1px solid rgba(255,255,255,0.1)",
-            background: "rgba(255,255,255,0.04)",
-          }}>
-            <div style={{ opacity: 0.6, fontSize: 12, marginBottom: 6 }}>Expires</div>
+          <div
+            style={{
+              padding: 20,
+              borderRadius: 16,
+              border: "1px solid rgba(255,255,255,0.1)",
+              background: "rgba(255,255,255,0.04)",
+            }}
+          >
+            <div style={{ opacity: 0.6, fontSize: 12, marginBottom: 6 }}>
+              Expires
+            </div>
             <div style={{ fontWeight: 800 }}>{expiresText}</div>
           </div>
 
-          <div style={{
-            padding: 20,
-            borderRadius: 16,
-            border: "1px solid rgba(255,255,255,0.1)",
-            background: "rgba(255,255,255,0.04)",
-          }}>
-            <div style={{ opacity: 0.6, fontSize: 12, marginBottom: 6 }}>Status</div>
-            <div style={{ fontWeight: 800 }}>{user?.subscription?.status || (user?.role === "vip" ? "active" : "inactive")}</div>
+          <div
+            style={{
+              padding: 20,
+              borderRadius: 16,
+              border: "1px solid rgba(255,255,255,0.1)",
+              background: "rgba(255,255,255,0.04)",
+            }}
+          >
+            <div style={{ opacity: 0.6, fontSize: 12, marginBottom: 6 }}>
+              Status
+            </div>
+            <div style={{ fontWeight: 800 }}>
+              {user?.subscription?.status ||
+                (user?.role === "vip" ? "active" : "inactive")}
+            </div>
           </div>
         </div>
 
         <div style={{ display: "flex", gap: 12 }}>
-          <button className="btn btn-ghost" onClick={() => navigate("/")}>← Back</button>
-          <button className={`btn ${loading ? "btn-disabled" : "btn-secondary"}`} disabled={loading} onClick={() => window.location.reload()}>
+          <button className="btn btn-ghost" onClick={() => navigate("/")}>
+            ← Back
+          </button>
+          <button
+            className={`btn ${loading ? "btn-disabled" : "btn-secondary"}`}
+            disabled={loading}
+            onClick={() => window.location.reload()}
+          >
             {loading ? "Refreshing..." : "Refresh"}
           </button>
         </div>
@@ -106,4 +156,3 @@ const UserDashboard = ({ user: initialUser }) => {
 };
 
 export default UserDashboard;
-

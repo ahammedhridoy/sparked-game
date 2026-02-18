@@ -4,7 +4,7 @@ import tailwindcss from "@tailwindcss/vite";
 import { VitePWA } from "vite-plugin-pwa";
 
 export default defineConfig(({ mode }) => {
-  const env = loadEnv(mode, process.cwd(), "");
+  const env = loadEnv(mode, ".", "");
   const apiUrl = (env.VITE_API_URL || "http://localhost:5001/api").replace(/\/$/, "");
   const backendOrigin = apiUrl.replace(/\/api$/, "");
 

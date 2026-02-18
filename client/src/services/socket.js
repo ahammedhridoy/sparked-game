@@ -31,7 +31,9 @@ class SocketService {
     this.socket.on("freeTimeExpired", () => {
       try {
         localStorage.setItem("sparked_free_expired", "1");
-      } catch {}
+      } catch (err) {
+        void err;
+      }
     });
 
     return this.socket;

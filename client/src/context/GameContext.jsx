@@ -34,6 +34,79 @@ export const GameProvider = ({ children, user }) => {
   const isExiting = useRef(false);
   const isReconnecting = useRef(false);
 
+  function clearGameData() {
+    localStorage.removeItem("sparked_gameId");
+    localStorage.removeItem("sparked_playerId");
+    setState({
+      gameId: null,
+      playerId: null,
+      game: null,
+      status: "menu",
+      pendingDraw: null,
+    });
+    setChat([]);
+  }
+
+  // ===== RECONNECT FUNCTION =====
+  async function reconnectToGame(gameId, playerId) {
+    console.log("🔄 Reconnecting to game:", gameId);
+
+    try {
+      const res = await gameAPI.getGame(gameId);
+
+      if (res.game) {
+        const isPlayer1 = playerId === "player1";
+        const playerData = isPlayer1 ? res.game.player1 : res.game.player2;
+
+        if (!playerData) {
+          console.log("❌ Player not found in game");
+          clearGameData();
+          return;
+        }
+
+        const newStatus = res.game.winner
+          ? "finished"
+          : res.game.player2
+          ? "playing"
+          : "waiting";
+
+        console.log("✅ Reconnected! Status:", newStatus);
+
+        setState({
+          gameId,
+          playerId,
+          game: res.game,
+          status: newStatus,
+          pendingDraw: null,
+        });
+        setChat(res.game.chat || []);
+
+        const socket = socketService.connect();
+        const joinRoom = () => {
+          console.log("🔌 Joining room after reconnect");
+          socketService.joinRoom(
+            gameId,
+            playerId,
+            user?.role || "free",
+            user?.id || null
+          );
+        };
+
+        if (socket.connected) {
+          joinRoom();
+        } else {
+          socket.once("connect", joinRoom);
+        }
+      } else {
+        console.log("❌ Game not found");
+        clearGameData();
+      }
+    } catch (error) {
+      console.error("❌ Reconnect error:", error);
+      clearGameData();
+    }
+  }
+
   // ===== RECONNECT ON PAGE LOAD =====
   useEffect(() => {
     const initGame = async () => {
@@ -54,6 +127,46 @@ export const GameProvider = ({ children, user }) => {
     initGame();
   }, []);
 
+  const forceExit = useCallback(() => {
+    console.log("🚪 Force exiting...");
+    socketService.disconnect();
+    clearGameData();
+    socketInitialized.current = false;
+    isExiting.current = false;
+    window.location.href = "/";
+  }, []);
+
+  // ===== REFRESH GAME =====
+  const refreshGame = async () => {
+    if (!state.gameId || isExiting.current) return;
+
+    try {
+      console.log("🔄 Refreshing game state...");
+      const res = await gameAPI.getGame(state.gameId);
+
+      if (res.game) {
+        const newStatus = res.game.winner
+          ? "finished"
+          : res.game.player2
+          ? "playing"
+          : "waiting";
+
+        setState((prev) => ({
+          ...prev,
+          game: res.game,
+          status: newStatus,
+        }));
+        setChat(res.game.chat || []);
+        console.log("✅ Game refreshed, status:", newStatus);
+      } else {
+        console.log("❌ Game no longer exists");
+        clearGameData();
+      }
+    } catch (error) {
+      console.error("Refresh error:", error);
+    }
+  };
+
   // ===== SOCKET SETUP =====
   useEffect(() => {
     if (socketInitialized.current || !state.gameId) return;
@@ -71,7 +184,7 @@ export const GameProvider = ({ children, user }) => {
           state.gameId,
           state.playerId,
           user?.role || "free",
-          user?.id || null,
+          user?.id || null
         );
       }
     };
@@ -148,114 +261,7 @@ export const GameProvider = ({ children, user }) => {
     };
   }, [state.gameId, state.playerId, user?.role]);
 
-  // ===== RECONNECT FUNCTION =====
-  const reconnectToGame = async (gameId, playerId) => {
-    console.log("🔄 Reconnecting to game:", gameId);
-
-    try {
-      const res = await gameAPI.getGame(gameId);
-
-      if (res.game) {
-        const isPlayer1 = playerId === "player1";
-        const playerData = isPlayer1 ? res.game.player1 : res.game.player2;
-
-        if (!playerData) {
-          console.log("❌ Player not found in game");
-          clearGameData();
-          return;
-        }
-
-        const newStatus = res.game.winner
-          ? "finished"
-          : res.game.player2
-            ? "playing"
-            : "waiting";
-
-        console.log("✅ Reconnected! Status:", newStatus);
-
-        setState({
-          gameId,
-          playerId,
-          game: res.game,
-          status: newStatus,
-          pendingDraw: null,
-        });
-        setChat(res.game.chat || []);
-
-        const socket = socketService.connect();
-        const joinRoom = () => {
-          console.log("🔌 Joining room after reconnect");
-          socketService.joinRoom(gameId, playerId, user?.role || "free", user?.id || null);
-        };
-
-        if (socket.connected) {
-          joinRoom();
-        } else {
-          socket.once("connect", joinRoom);
-        }
-      } else {
-        console.log("❌ Game not found");
-        clearGameData();
-      }
-    } catch (error) {
-      console.error("❌ Reconnect error:", error);
-      clearGameData();
-    }
-  };
-
-  const clearGameData = () => {
-    localStorage.removeItem("sparked_gameId");
-    localStorage.removeItem("sparked_playerId");
-    setState({
-      gameId: null,
-      playerId: null,
-      game: null,
-      status: "menu",
-      pendingDraw: null,
-    });
-    setChat([]);
-  };
-
-  // ===== REFRESH GAME =====
-  const refreshGame = async () => {
-    if (!state.gameId || isExiting.current) return;
-
-    try {
-      console.log("🔄 Refreshing game state...");
-      const res = await gameAPI.getGame(state.gameId);
-
-      if (res.game) {
-        const newStatus = res.game.winner
-          ? "finished"
-          : res.game.player2
-            ? "playing"
-            : "waiting";
-
-        setState((prev) => ({
-          ...prev,
-          game: res.game,
-          status: newStatus,
-        }));
-        setChat(res.game.chat || []);
-        console.log("✅ Game refreshed, status:", newStatus);
-      } else {
-        console.log("❌ Game no longer exists");
-        clearGameData();
-      }
-    } catch (error) {
-      console.error("Refresh error:", error);
-    }
-  };
-
   // ===== FORCE EXIT =====
-  const forceExit = useCallback(() => {
-    console.log("🚪 Force exiting...");
-    socketService.disconnect();
-    clearGameData();
-    socketInitialized.current = false;
-    isExiting.current = false;
-    window.location.href = "/";
-  }, []);
 
   // ===== CREATE GAME =====
   const createGame = async (playerName) => {
@@ -281,7 +287,12 @@ export const GameProvider = ({ children, user }) => {
     const socket = socketService.connect();
     const joinRoom = () => {
       console.log("🔌 Joining socket room:", res.gameId);
-      socketService.joinRoom(res.gameId, res.playerId, user?.role || "free", user?.id || null);
+      socketService.joinRoom(
+        res.gameId,
+        res.playerId,
+        user?.role || "free",
+        user?.id || null
+      );
     };
 
     if (socket.connected) {
@@ -318,7 +329,12 @@ export const GameProvider = ({ children, user }) => {
     const socket = socketService.connect();
     const joinRoom = () => {
       console.log("🔌 Joining socket room:", res.gameId);
-      socketService.joinRoom(res.gameId, res.playerId, user?.role || "free", user?.id || null);
+      socketService.joinRoom(
+        res.gameId,
+        res.playerId,
+        user?.role || "free",
+        user?.id || null
+      );
     };
 
     if (socket.connected) {
@@ -364,7 +380,12 @@ export const GameProvider = ({ children, user }) => {
 
   // ===== OTHER ACTIONS =====
   const submitProof = async (url, type) => {
-    const res = await gameAPI.submitProof(state.gameId, state.playerId, url, type);
+    const res = await gameAPI.submitProof(
+      state.gameId,
+      state.playerId,
+      url,
+      type
+    );
     if (res?.success && res?.game) {
       const newStatus = res.game.winner
         ? "finished"
@@ -392,7 +413,11 @@ export const GameProvider = ({ children, user }) => {
   };
 
   const verifyChallenge = async (success) => {
-    const res = await gameAPI.verifyChallenge(state.gameId, state.playerId, success);
+    const res = await gameAPI.verifyChallenge(
+      state.gameId,
+      state.playerId,
+      success
+    );
     if (res?.success && res?.game) {
       const newStatus = res.game.winner
         ? "finished"
@@ -509,7 +534,7 @@ export const GameProvider = ({ children, user }) => {
       socketInitialized.current = false;
       isExiting.current = false;
     },
-    [state.gameId, state.playerId],
+    [state]
   );
 
   // ===== CONTEXT VALUE =====

@@ -53,16 +53,22 @@ router.put("/users/:id", async (req, res) => {
     if (plan !== undefined) user.subscription.plan = plan;
     if (status) user.subscription.status = status;
 
-    if (expiresAt) {
-      user.subscription.expiresAt = new Date(expiresAt);
+    if (expiresAt !== undefined) {
+      if (expiresAt === null || expiresAt === "null") {
+        user.subscription.expiresAt = null;
+      } else if (expiresAt) {
+        user.subscription.expiresAt = new Date(expiresAt);
+      }
     } else if (plan) {
-      const months = plan === "12m" ? 12 : plan === "6m" ? 6 : plan === "1m" ? 1 : 0;
+      const months =
+        plan === "12m" ? 12 : plan === "6m" ? 6 : plan === "1m" ? 1 : 0;
       if (months > 0) {
         const now = new Date();
         const current = user.subscription?.expiresAt
           ? new Date(user.subscription.expiresAt)
           : null;
-        const base = current && current.getTime() > now.getTime() ? current : now;
+        const base =
+          current && current.getTime() > now.getTime() ? current : now;
         const newExp = new Date(base);
         newExp.setMonth(newExp.getMonth() + months);
         user.subscription.expiresAt = newExp;
@@ -92,4 +98,3 @@ router.put("/users/:id", async (req, res) => {
 });
 
 module.exports = router;
-
