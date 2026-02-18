@@ -16,7 +16,7 @@ router.post(
       event = stripe.webhooks.constructEvent(
         req.body,
         sig,
-        process.env.STRIPE_WEBHOOK_SECRET,
+        process.env.STRIPE_WEBHOOK_SECRET
       );
     } catch (err) {
       console.error("Webhook signature verification failed:", err.message);
@@ -41,6 +41,8 @@ router.post(
               (typeof session.subscription === "string"
                 ? session.subscription
                 : session.subscription?.id) || null;
+            // Clear any free trial lock when upgrading
+            user.freePlayEndsAt = null;
             // Set expiry based on plan
             const months = plan === "12m" ? 12 : plan === "6m" ? 6 : 1;
             const expires = new Date();
@@ -78,7 +80,7 @@ router.post(
       console.error("Webhook handling error:", e);
       res.status(500).send("Webhook handler failed");
     }
-  },
+  }
 );
 
 module.exports = router;

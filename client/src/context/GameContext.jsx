@@ -67,7 +67,12 @@ export const GameProvider = ({ children, user }) => {
       console.log("✅ Socket connected");
       setIsConnected(true);
       if (state.gameId && state.playerId) {
-        socketService.joinRoom(state.gameId, state.playerId, user?.role || "free");
+        socketService.joinRoom(
+          state.gameId,
+          state.playerId,
+          user?.role || "free",
+          user?.id || null,
+        );
       }
     };
 
@@ -180,7 +185,7 @@ export const GameProvider = ({ children, user }) => {
         const socket = socketService.connect();
         const joinRoom = () => {
           console.log("🔌 Joining room after reconnect");
-          socketService.joinRoom(gameId, playerId, user?.role || "free");
+          socketService.joinRoom(gameId, playerId, user?.role || "free", user?.id || null);
         };
 
         if (socket.connected) {
@@ -276,7 +281,7 @@ export const GameProvider = ({ children, user }) => {
     const socket = socketService.connect();
     const joinRoom = () => {
       console.log("🔌 Joining socket room:", res.gameId);
-      socketService.joinRoom(res.gameId, res.playerId, user?.role || "free");
+      socketService.joinRoom(res.gameId, res.playerId, user?.role || "free", user?.id || null);
     };
 
     if (socket.connected) {
@@ -313,7 +318,7 @@ export const GameProvider = ({ children, user }) => {
     const socket = socketService.connect();
     const joinRoom = () => {
       console.log("🔌 Joining socket room:", res.gameId);
-      socketService.joinRoom(res.gameId, res.playerId, user?.role || "free");
+      socketService.joinRoom(res.gameId, res.playerId, user?.role || "free", user?.id || null);
     };
 
     if (socket.connected) {

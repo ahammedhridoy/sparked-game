@@ -49,6 +49,7 @@ router.post("/google", async (req, res) => {
         email: user.email,
         role: user.role,
         subscription: user.subscription,
+        freePlayEndsAt: user.freePlayEndsAt,
       },
     });
   } catch (error) {
@@ -78,6 +79,7 @@ router.get("/me", async (req, res) => {
         email: user.email,
         role: user.role,
         subscription: user.subscription,
+        freePlayEndsAt: user.freePlayEndsAt,
       },
     });
   } catch (e) {

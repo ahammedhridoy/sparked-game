@@ -49,8 +49,8 @@ const AppRoutes = ({ user, onLogin, onLogout, onUserUpdate }) => {
         path="/admin"
         element={
           user?.role === "admin" ? (
-            <AdminDashboard />)
-           : (
+            <AdminDashboard />
+          ) : (
             <Navigate to="/" replace />
           )
         }
@@ -66,11 +66,7 @@ const AppRoutes = ({ user, onLogin, onLogout, onUserUpdate }) => {
       <Route
         path="/admin/players"
         element={
-          user?.role === "admin" ? (
-            <PlayersPage />
-          ) : (
-            <Navigate to="/" replace />
-          )
+          user?.role === "admin" ? <PlayersPage /> : <Navigate to="/" replace />
         }
       />
 
@@ -82,7 +78,10 @@ const AppRoutes = ({ user, onLogin, onLogout, onUserUpdate }) => {
       />
 
       {/* Stripe checkout results */}
-      <Route path="/success" element={<CheckoutSuccess onUserUpdate={onUserUpdate} />} />
+      <Route
+        path="/success"
+        element={<CheckoutSuccess onUserUpdate={onUserUpdate} />}
+      />
       <Route path="/cancel" element={<CheckoutCancel />} />
 
       <Route
@@ -234,7 +233,12 @@ function App() {
   return (
     <GameProvider user={user}>
       <Router>
-        <AppRoutes user={user} onLogin={handleLogin} onLogout={handleLogout} onUserUpdate={handleUserUpdate} />
+        <AppRoutes
+          user={user}
+          onLogin={handleLogin}
+          onLogout={handleLogout}
+          onUserUpdate={handleUserUpdate}
+        />
       </Router>
     </GameProvider>
   );

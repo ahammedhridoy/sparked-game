@@ -12,7 +12,7 @@ const MenuScreen = ({ user, onLogin, onLogout }) => {
   const [isIOS, setIsIOS] = useState(false);
   const [showIOSModal, setShowIOSModal] = useState(false);
   const [showLoginPrompt, setShowLoginPrompt] = useState(false);
-  const [freeExpired] = useState(() => {
+  const [freeExpiredLocal] = useState(() => {
     try {
       return localStorage.getItem("sparked_free_expired") === "1";
     } catch {
@@ -131,35 +131,53 @@ const MenuScreen = ({ user, onLogin, onLogout }) => {
           )}
 
           {/* Primary actions */}
-          <button
-            onClick={() => navigate("/create")}
-            className="btn btn-primary"
-            disabled={!user || (user.role === "free" && freeExpired)}
-            title={
-              !user
-                ? "Login with Google to start"
-                : user.role === "free" && freeExpired
-                ? "Free trial over — upgrade to VIP to play"
-                : undefined
-            }
-          >
-            🎲 Start New Game
-          </button>
+          {(() => {
+            const dbExpired =
+              user?.role === "free" && user?.freePlayEndsAt
+                ? new Date(user.freePlayEndsAt).getTime() <= Date.now()
+                : false;
+            const freeExpired = freeExpiredLocal || dbExpired;
+            return (
+              <button
+                onClick={() => navigate("/create")}
+                className="btn btn-primary"
+                disabled={!user || (user.role === "free" && freeExpired)}
+                title={
+                  !user
+                    ? "Login with Google to start"
+                    : user.role === "free" && freeExpired
+                    ? "Free trial over — upgrade to VIP to play"
+                    : undefined
+                }
+              >
+                🎲 Start New Game
+              </button>
+            );
+          })()}
 
-          <button
-            onClick={() => navigate("/join")}
-            className="btn btn-secondary"
-            disabled={!user || (user.role === "free" && freeExpired)}
-            title={
-              !user
-                ? "Login with Google to join"
-                : user.role === "free" && freeExpired
-                ? "Free trial over — upgrade to VIP to play"
-                : undefined
-            }
-          >
-            🔗 Join Game
-          </button>
+          {(() => {
+            const dbExpired =
+              user?.role === "free" && user?.freePlayEndsAt
+                ? new Date(user.freePlayEndsAt).getTime() <= Date.now()
+                : false;
+            const freeExpired = freeExpiredLocal || dbExpired;
+            return (
+              <button
+                onClick={() => navigate("/join")}
+                className="btn btn-secondary"
+                disabled={!user || (user.role === "free" && freeExpired)}
+                title={
+                  !user
+                    ? "Login with Google to join"
+                    : user.role === "free" && freeExpired
+                    ? "Free trial over — upgrade to VIP to play"
+                    : undefined
+                }
+              >
+                🔗 Join Game
+              </button>
+            );
+          })()}
 
           <button onClick={() => navigate("/rules")} className="btn btn-ghost">
             📖 Game Rules

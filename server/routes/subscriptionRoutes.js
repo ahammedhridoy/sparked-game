@@ -104,6 +104,8 @@ router.get("/verify-session", async (req, res) => {
       (typeof session.subscription === "string"
         ? session.subscription
         : session.subscription?.id) || null;
+    // Clear any free trial lock when upgrading
+    user.freePlayEndsAt = null;
     const months = plan === "12m" ? 12 : plan === "6m" ? 6 : 1;
     const expires = new Date();
     expires.setMonth(expires.getMonth() + months);

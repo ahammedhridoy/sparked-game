@@ -11,6 +11,8 @@ const userSchema = new mongoose.Schema({
     stripeSubscriptionId: { type: String, default: null },
     expiresAt: { type: Date, default: null },
   },
+  // Persisted 10-minute free session window for enforcement
+  freePlayEndsAt: { type: Date, default: null },
   createdAt: { type: Date, default: Date.now },
 });
 

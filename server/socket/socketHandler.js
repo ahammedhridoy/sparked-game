@@ -7,7 +7,7 @@ module.exports = (io) => {
   io.on("connection", (socket) => {
     console.log("Client connected:", socket.id);
 
-    socket.on("joinRoom", async ({ gameId, playerId, role }) => {
+    socket.on("joinRoom", async ({ gameId, playerId, role, userId }) => {
       console.log(`Player ${playerId} joining room ${gameId}`);
 
       socket.join(gameId);
@@ -35,25 +35,45 @@ module.exports = (io) => {
       if (role === "free") {
         const key = `${gameId}:${playerId}`;
         const now = Date.now();
-        let entry = freeTimers.get(key);
 
-        if (!entry) {
-          entry = { endTime: now + 10 * 60 * 1000, timeout: null };
-          freeTimers.set(key, entry);
-          console.log(`⏳ Started 10m timer for ${key}`);
-        } else {
-          console.log(`⏳ Resuming timer for ${key}`);
+        let endsAtFromDb = null;
+        if (userId) {
+          try {
+            const user = await require("../models/User").findById(userId);
+            if (
+              user &&
+              (!user.freePlayEndsAt || isNaN(new Date(user.freePlayEndsAt)))
+            ) {
+              user.freePlayEndsAt = new Date(now + 10 * 60 * 1000);
+              await user.save();
+              endsAtFromDb = user.freePlayEndsAt.getTime();
+              console.log(
+                `⏳ Set DB freePlayEndsAt for ${
+                  user.email
+                } -> ${user.freePlayEndsAt.toISOString()}`
+              );
+            } else if (user && user.freePlayEndsAt) {
+              endsAtFromDb = new Date(user.freePlayEndsAt).getTime();
+            }
+          } catch (e) {
+            console.warn("Free timer DB check failed:", e?.message || e);
+          }
         }
 
-        const remaining = Math.max(0, entry.endTime - now);
-        if (entry.timeout) {
-          clearTimeout(entry.timeout);
-          entry.timeout = null;
-        }
+        let endTime =
+          endsAtFromDb ||
+          (freeTimers.get(key)?.endTime ?? now + 10 * 60 * 1000);
+        let entry = freeTimers.get(key) || { endTime, timeout: null };
+        entry.endTime = endTime;
+        freeTimers.set(key, entry);
+
+        const remaining = Math.max(0, endTime - now);
+        if (entry.timeout) clearTimeout(entry.timeout);
 
         if (remaining === 0) {
           console.log(`⏰ Timer already expired for ${key}`);
           socket.emit("freeTimeExpired");
+          freeTimers.delete(key);
         } else {
           entry.timeout = setTimeout(() => {
             console.log(`⏰ Free time expired for ${key}`);

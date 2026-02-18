@@ -44,9 +44,9 @@ class SocketService {
     }
   }
 
-  joinRoom(gameId, playerId, role) {
+  joinRoom(gameId, playerId, role, userId) {
     if (this.socket?.connected) {
-      this.socket.emit("joinRoom", { gameId, playerId, role });
+      this.socket.emit("joinRoom", { gameId, playerId, role, userId });
     }
   }
 
