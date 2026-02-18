@@ -18,6 +18,7 @@ import GamesPage from "./pages/GamesPage";
 import PlayersPage from "./pages/PlayersPage";
 import ChatsPage from "./pages/ChatsPage";
 import { CheckoutSuccess, CheckoutCancel } from "./pages/CheckoutResult";
+import UserDashboard from "./pages/UserDashboard";
 
 // Loading component
 const LoadingScreen = () => (
@@ -158,6 +159,14 @@ const AppRoutes = ({ user, onLogin, onLogout, onUserUpdate }) => {
           ) : (
             <Navigate to="/" replace />
           )
+        }
+      />
+
+      {/* User dashboard - requires login */}
+      <Route
+        path="/dashboard"
+        element={
+          user ? <UserDashboard user={user} /> : <Navigate to="/" replace />
         }
       />
 

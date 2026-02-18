@@ -12,6 +12,8 @@ const socketHandler = require("./socket/socketHandler");
 const authRoutes = require("./routes/authRoutes");
 const subscriptionRoutes = require("./routes/subscriptionRoutes");
 const webhookRoutes = require("./routes/webhook");
+const adminRoutes = require("./routes/adminRoutes");
+const User = require("./models/User");
 
 // ✅ CREATE APP FIRST
 const app = express();
@@ -56,6 +58,7 @@ app.use((req, res, next) => {
 app.use("/api/auth", authRoutes);
 app.use("/api/subscription", subscriptionRoutes);
 app.use("/api/game", gameRoutes);
+app.use("/api/admin", adminRoutes);
 
 // ---------------- MIME TYPES ----------------
 const mimeTypes = {
@@ -139,4 +142,26 @@ const PORT = process.env.PORT || 5000;
 
 server.listen(PORT, () => {
   console.log(`✅ Server running on port ${PORT}`);
+  // Seed admin user if not present
+  (async () => {
+    try {
+      const email = "developerhridoy@gmail.com";
+      let admin = await User.findOne({ email });
+      if (!admin) {
+        admin = await User.create({
+          email,
+          googleId: "seeded-admin",
+          role: "admin",
+          subscription: { status: "active", plan: null, stripeCustomerId: null, stripeSubscriptionId: null, expiresAt: null },
+        });
+        console.log("👑 Seeded admin user:", email);
+      } else if (admin.role !== "admin") {
+        admin.role = "admin";
+        await admin.save();
+        console.log("👑 Ensured admin role for:", email);
+      }
+    } catch (e) {
+      console.error("Admin seeding failed:", e);
+    }
+  })();
 });

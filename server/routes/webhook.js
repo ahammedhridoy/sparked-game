@@ -43,9 +43,15 @@ router.post(
                 : session.subscription?.id) || null;
             // Clear any free trial lock when upgrading
             user.freePlayEndsAt = null;
-            // Set expiry based on plan
+            // Set expiry based on plan (stack from later of now or current expiry)
             const months = plan === "12m" ? 12 : plan === "6m" ? 6 : 1;
-            const expires = new Date();
+            const now = new Date();
+            const current = user.subscription?.expiresAt
+              ? new Date(user.subscription.expiresAt)
+              : null;
+            const base =
+              current && current.getTime() > now.getTime() ? current : now;
+            const expires = new Date(base);
             expires.setMonth(expires.getMonth() + months);
             user.subscription.expiresAt = expires;
             await user.save();
