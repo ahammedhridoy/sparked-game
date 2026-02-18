@@ -104,17 +104,22 @@ router.get("/verify-session", async (req, res) => {
       (typeof session.subscription === "string"
         ? session.subscription
         : session.subscription?.id) || null;
-    // Clear any free trial lock when upgrading
-    user.freePlayEndsAt = null;
-    const months = plan === "12m" ? 12 : plan === "6m" ? 6 : 1;
-    const now = new Date();
-    const current = user.subscription?.expiresAt
-      ? new Date(user.subscription.expiresAt)
-      : null;
-    const base = current && current.getTime() > now.getTime() ? current : now;
-    const expires = new Date(base);
-    expires.setMonth(expires.getMonth() + months);
-    user.subscription.expiresAt = expires;
+    // Idempotency: only extend once per Stripe session
+    const isDuplicate = user.subscription.lastSessionId === session.id;
+    if (!isDuplicate) {
+      user.subscription.lastSessionId = session.id;
+      // Clear any free trial lock when upgrading
+      user.freePlayEndsAt = null;
+      const months = plan === "12m" ? 12 : plan === "6m" ? 6 : 1;
+      const now = new Date();
+      const current = user.subscription?.expiresAt
+        ? new Date(user.subscription.expiresAt)
+        : null;
+      const base = current && current.getTime() > now.getTime() ? current : now;
+      const expires = new Date(base);
+      expires.setMonth(expires.getMonth() + months);
+      user.subscription.expiresAt = expires;
+    }
     await user.save();
 
     res.json({

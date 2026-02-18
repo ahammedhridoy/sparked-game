@@ -1,7 +1,9 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { adminAPI } from "../services/adminAPI";
 
 export default function AdminDashboard() {
+  const navigate = useNavigate();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(null);
@@ -64,12 +66,17 @@ export default function AdminDashboard() {
       }}
     >
       <div className="menu-container" style={{ width: "100%", maxWidth: 900 }}>
-        <h1 className="gradient-title" style={{ marginBottom: 8 }}>
-          🛠 Admin Dashboard
-        </h1>
-        <p className="subtitle" style={{ marginBottom: 20 }}>
-          Manage users and subscriptions
-        </p>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+          <button className="btn btn-ghost" onClick={() => navigate("/")}>← Back</button>
+          <div>
+            <h1 className="gradient-title" style={{ marginBottom: 0 }}>🛠 Admin Dashboard</h1>
+            <p className="subtitle" style={{ margin: 0 }}>Manage users and subscriptions</p>
+          </div>
+          <button className="btn btn-secondary" onClick={load} disabled={loading}>
+            {loading ? "Loading…" : "Refresh"}
+          </button>
+        </div>
+        <div style={{ height: 12 }} />
 
         <div
           style={{
@@ -200,16 +207,7 @@ export default function AdminDashboard() {
             </tbody>
           </table>
         </div>
-
-        <div style={{ marginTop: 12 }}>
-          <button
-            className="btn btn-secondary"
-            onClick={load}
-            disabled={loading}
-          >
-            Refresh
-          </button>
-        </div>
+        
       </div>
     </div>
   );

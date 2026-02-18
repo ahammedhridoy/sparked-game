@@ -179,6 +179,26 @@ const MenuScreen = ({ user, onLogin, onLogout }) => {
             );
           })()}
 
+          {/* Dashboards */}
+          {user && (
+            <>
+              <button
+                onClick={() => navigate("/dashboard")}
+                className="btn btn-ghost"
+              >
+                👤 My Dashboard
+              </button>
+              {user.role === "admin" && (
+                <button
+                  onClick={() => navigate("/admin")}
+                  className="btn btn-ghost"
+                >
+                  🛠 Admin Dashboard
+                </button>
+              )}
+            </>
+          )}
+
           <button onClick={() => navigate("/rules")} className="btn btn-ghost">
             📖 Game Rules
           </button>

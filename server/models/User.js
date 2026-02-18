@@ -9,6 +9,7 @@ const userSchema = new mongoose.Schema({
     plan: { type: String, enum: ["1m", "6m", "12m"], default: null },
     stripeCustomerId: { type: String, default: null },
     stripeSubscriptionId: { type: String, default: null },
+    lastSessionId: { type: String, default: null },
     expiresAt: { type: Date, default: null },
   },
   // Persisted 10-minute free session window for enforcement
